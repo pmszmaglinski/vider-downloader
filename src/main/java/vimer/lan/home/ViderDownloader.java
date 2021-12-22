@@ -2,10 +2,8 @@ package vimer.lan.home;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import jodd.http.Cookie;
 import jodd.http.HttpRequest;
 import jodd.http.HttpResponse;
-
 import jodd.io.FileUtil;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
@@ -15,10 +13,8 @@ import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 class ViderDownloader {
 
@@ -28,7 +24,6 @@ class ViderDownloader {
     final static String tesseractDatapath = "/usr/local/Cellar/tesseract/4.1.3/share/tessdata";
     final static String tesseractLanguage = "eng";
     final static String tesseractImageDPI = "96";
-    Cookie[] cookies;
     Map<String, String> sesonsMap = new LinkedHashMap<>();
     Map<String, String> moviesPathMap = new LinkedHashMap<>();
 
@@ -146,14 +141,6 @@ class ViderDownloader {
 
     }
 
-    private void decodeCookie() {
-        for (Cookie cookie:this.cookies) {
-            try {
-                System.out.println(URLDecoder.decode(cookie.toString(), StandardCharsets.UTF_8.name()));
-            } catch (UnsupportedEncodingException ignored) {}
-        }
-    }
-
     private static Tesseract getTesseract() {
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath(tesseractDatapath);
@@ -215,4 +202,5 @@ class ViderDownloader {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(map);
     }
+
 }
