@@ -92,7 +92,7 @@ class Configuration {
                 String episodeIntermediateLink2 = getepisodeIntermediateLink2(episodeDocument);
 
                 episodeResponse = HttpRequest.get(episodeIntermediateLink2)
-                        .header("referer","https://vider.info/")
+                        .header("referer", "https://vider.info/")
                         .send();
 
                 if (episodeResponse.statusCode() == 404) {
@@ -127,7 +127,7 @@ class Configuration {
     private String getSeriesName(Document doc) {
         return Objects.requireNonNull(doc.select("title")
                         .first())
-                        .text();
+                .text();
     }
 
     private void addElementsToMap(Document doc, Map<String, String> map) {
@@ -198,7 +198,10 @@ class Configuration {
     }
 
     Configuration createConfigFile(Map<String, Object> map, String configFileName) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        Gson gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create();
         try (FileWriter fw = new FileWriter(configFileName)) {
             gson.toJson(map, fw);
             log.info("Created configuration file: " + configFileName);
