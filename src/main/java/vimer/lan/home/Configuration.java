@@ -7,20 +7,21 @@ import jodd.http.HttpResponse;
 import jodd.io.FileUtil;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
-import org.json.JSONObject;
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-class ViderDownloader {
+class Configuration {
+
+    private static final Logger log = Logger.getLogger(Configuration.class);
 
     //final String searchUrl = "https://vider.info/search/all/{searchTerms}";
     final String viderUrl = "https://vider.info";
@@ -30,16 +31,13 @@ class ViderDownloader {
     final static String tesseractDatapath = "/usr/local/Cellar/tesseract/4.1.3/share/tessdata";
     final static String tesseractLanguage = "eng";
     final static String tesseractImageDPI = "96";
-    Map<String, Object> downloadMap = new LinkedHashMap<>();
-    //JSONObject configuration = new JSONObject();
 
-    
-    public static void main(String[] args) throws TesseractException, IOException {
-        ViderDownloader viderDownloader = new ViderDownloader();
-        viderDownloader.getLinks();
-    }
+    final static Map<String, Object> configfileMap = new LinkedHashMap<>();
+    final static String configFileName = "configfile.json";
+    final static File configFile = new File(configFileName);
 
-    private void getLinks() throws IOException, TesseractException {
+
+    Configuration getLinks() throws IOException, TesseractException {
         Document seriesDocument;
         String seriesUrl = viderUrl + seriesPath;
         HttpResponse seriesResponse = HttpRequest.get(seriesUrl).send();
@@ -50,14 +48,14 @@ class ViderDownloader {
         }
 
         seriesDocument = Jsoup.parse(seriesResponse.toString());
-        downloadMap.put("title", getSeriesName(seriesDocument));
+        configfileMap.put("title", getSeriesName(seriesDocument));
 
         Elements seriesElement = seriesDocument.select("p.title > a");
-        seriesElement.forEach( season -> {
+        seriesElement.forEach(season -> {
             String seasonName = season.html();
             String seasonPath = season.attr("href");
             String seasonUrl = viderUrl + seasonPath;
-            Map<String,String> seasonMap = new LinkedHashMap<>();
+            Map<String, Map<String, String>> seasonMap = new LinkedHashMap<>();
 
             HttpResponse seasonResponse = HttpRequest.get(seasonUrl).send();
             Document seasonDocument;
@@ -67,69 +65,74 @@ class ViderDownloader {
                 try {
                     seasonResponse = fixCaptcha(seasonUrl, seasonDocument, seasonResponse);
                 } catch (IOException | TesseractException e) {
-                    e.printStackTrace();
+                    log.error("Failed on getting seasons ! ", e);
                 }
             }
 
             seasonDocument = Jsoup.parse(seasonResponse.toString());
             Elements seasonElement = seasonDocument.select("p.title > a");
-            seasonElement.forEach( episode -> {
+            seasonElement.forEach(episode -> {
                 String episodeName = episode.html();
                 String episodePath = episode.attr("href");
                 String episodeIntermediateLink1 = viderUrl + episodePath;
+                Map<String, String> episodeMap = new LinkedHashMap<>();
 
-//                HttpResponse episodeResponse = HttpRequest.get(episodeIntermediateLink1).send();
-//                Document episodeDocument;
-//                if (episodeResponse.statusCode() == 404) {
-//                    episodeDocument = Jsoup.parse(episodeResponse.toString());
-//                    try {
-//                        episodeResponse = fixCaptcha(episodeIntermediateLink1, episodeDocument, episodeResponse);
-//                    } catch (IOException | TesseractException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//
-//                episodeDocument = Jsoup.parse(episodeResponse.toString());
-//                String episodeIntermediateLink2 = getepisodeIntermediateLink2(episodeDocument);
-//
-//                episodeResponse = HttpRequest.get(episodeIntermediateLink2)
-//                        .header("referer","https://vider.info/")
-//                        .send();
-//
-//                if (episodeResponse.statusCode() == 404) {
-//                    episodeDocument = Jsoup.parse(episodeResponse.toString());
-//                    try {
-//                        episodeResponse = fixCaptcha(episodeIntermediateLink2, episodeDocument, episodeResponse);
-//                    } catch (IOException | TesseractException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//                String episodeDownloadLink = episodeResponse.header("Location");
-//
-                seasonMap.put(episodeName, episodePath);
+                HttpResponse episodeResponse = HttpRequest.get(episodeIntermediateLink1).send();
+                Document episodeDocument;
+                if (episodeResponse.statusCode() == 404) {
+                    episodeDocument = Jsoup.parse(episodeResponse.toString());
+                    try {
+                        episodeResponse = fixCaptcha(episodeIntermediateLink1, episodeDocument, episodeResponse);
+                    } catch (IOException | TesseractException e) {
+                        log.error("Failed on getting episodes ! ", e);
+                    }
+                }
 
-                System.out.println(episodeName + " " + episodeIntermediateLink1);
+                episodeDocument = Jsoup.parse(episodeResponse.toString());
+                String episodeIntermediateLink2 = getepisodeIntermediateLink2(episodeDocument);
+
+                episodeResponse = HttpRequest.get(episodeIntermediateLink2)
+                        .header("referer","https://vider.info/")
+                        .send();
+
+                if (episodeResponse.statusCode() == 404) {
+                    episodeDocument = Jsoup.parse(episodeResponse.toString());
+                    try {
+                        episodeResponse = fixCaptcha(episodeIntermediateLink2, episodeDocument, episodeResponse);
+                    } catch (IOException | TesseractException e) {
+                        log.error("Failed on getting episodes final link ! ", e);
+                    }
+                }
+                String episodeDownloadLink = episodeResponse.header("Location");
+
+                episodeMap.put("url", episodeDownloadLink);
+                episodeMap.put("downloaded", "false");
+                seasonMap.put(episodeName, episodeMap);
+                log.info("Finished generating configuration for episode: " + episodeName);
             });
-            downloadMap.put(seasonName, seasonMap);
+
+            configfileMap.put(seasonName, seasonMap);
+            log.info("Finished generating config for season: " + seasonName);
         });
-        System.out.println(map2Json(downloadMap));
+
+        return this;
     }
 
     private String getepisodeIntermediateLink2(Document doc) {
         return doc.select("link[rel=video_src]")
                 .attr("href")
-                .replaceAll("^.*file=","");
+                .replaceAll("^.*file=", "");
     }
 
     private String getSeriesName(Document doc) {
         return Objects.requireNonNull(doc.select("title")
-                .first())
-                .text();
+                        .first())
+                        .text();
     }
 
-    private void addElementsToMap(Document doc, Map<String,String> map) {
+    private void addElementsToMap(Document doc, Map<String, String> map) {
         Elements el = doc.select("p.title > a");
-        el.forEach( element -> map.put(element.html(), element.attr("href")));
+        el.forEach(element -> map.put(element.html(), element.attr("href")));
     }
 
     private static Tesseract getTesseract() {
@@ -175,14 +178,14 @@ class ViderDownloader {
     }
 
     private void getResponseHeaders(HttpResponse response) {
-        response.headerNames().forEach( header -> System.out.println(header + " -> " + response.header(header)));
+        response.headerNames().forEach(header -> System.out.println(header + " -> " + response.header(header)));
     }
 
     private HttpResponse fixCaptcha(String url, Document doc, HttpResponse response) throws IOException, TesseractException {
         while (response.statusCode() == 404) {
             File captchaFile = getCaptchaFile(doc);
             String captchaCode = getCaptchaCode(captchaFile);
-            System.out.println(captchaCode);
+            log.debug("Trying captcha: " + captchaCode);
             response = sendCaptcha(url, captchaCode);
         }
 
@@ -192,5 +195,17 @@ class ViderDownloader {
     private String map2Json(Map<String, Object> map) {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(map);
+    }
+
+    Configuration createConfigFile(Map<String, Object> map, String configFileName) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        try (FileWriter fw = new FileWriter(configFileName)) {
+            gson.toJson(map, fw);
+            log.info("Created configuration file: " + configFileName);
+        } catch (IOException e) {
+            log.error("Faild to create configuration file ! ", e);
+        }
+
+        return this;
     }
 }
