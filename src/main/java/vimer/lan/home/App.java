@@ -2,7 +2,6 @@ package vimer.lan.home;
 
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 import java.io.IOException;
 
