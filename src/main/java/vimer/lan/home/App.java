@@ -12,7 +12,11 @@ public class App {
     public static void main(String[] args) throws TesseractException, IOException {
 
         if (Configuration.configFile.exists()) {
-            log.info("Plik istnieje... Sprawdzam czy wszystko jest ściągnięte... Jak nie to kontynuuje ściąganie...");
+            log.info("Found " + Configuration.configFileName);
+
+            Download download = new Download()
+                    //.loopOverMap();
+                            .downloadFileFromUrl();
 
             System.exit(0);
         }
