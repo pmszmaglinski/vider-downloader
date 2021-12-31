@@ -19,7 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-class Configuration {
+class Configuration {   //TODO As singleton ?
 
     private static final Logger log = Logger.getLogger(Configuration.class);
 

@@ -14,9 +14,12 @@ public class App {
         if (Configuration.configFile.exists()) {
             log.info("Found " + Configuration.configFileName);
 
+            // TODO: Run download in threads
             Download download = new Download()
                     //.loopOverMap();
-                            .downloadFileFromUrl();
+                    //.downloadFileFromUrl();
+                    .getNextEpisodeToDownload();
+
 
             System.exit(0);
         }
