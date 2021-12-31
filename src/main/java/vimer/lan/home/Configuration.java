@@ -23,10 +23,8 @@ class Configuration {   //TODO As singleton ?
 
     private static final Logger log = Logger.getLogger(Configuration.class);
 
-    //final String searchUrl = "https://vider.info/search/all/{searchTerms}";
     final String viderUrl = "https://vider.info";
     final String seriesPath = "/dir/+dnv1mm";
-    //final String seriesPath = "/dir/+dnc5"; Dempsey i Makepeace na tropie ;)
 
     final static String tesseractDatapath = "/usr/local/Cellar/tesseract/4.1.3/share/tessdata";
     final static String tesseractLanguage = "eng";
@@ -89,7 +87,7 @@ class Configuration {   //TODO As singleton ?
                 }
 
                 episodeDocument = Jsoup.parse(episodeResponse.toString());
-                String episodeIntermediateLink2 = getepisodeIntermediateLink2(episodeDocument);
+                String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
 
                 episodeResponse = HttpRequest.get(episodeIntermediateLink2)
                         .header("referer", "https://vider.info/")
@@ -118,15 +116,14 @@ class Configuration {   //TODO As singleton ?
         return this;
     }
 
-    private String getepisodeIntermediateLink2(Document doc) {
+    private String getEpisodeIntermediateLink2(Document doc) {
         return doc.select("link[rel=video_src]")
                 .attr("href")
                 .replaceAll("^.*file=", "");
     }
 
     private String getSeriesName(Document doc) {
-        return Objects.requireNonNull(doc.select("title")
-                        .first())
+        return Objects.requireNonNull(doc.select("title").first())
                 .text();
     }
 
