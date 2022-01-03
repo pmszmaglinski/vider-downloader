@@ -19,12 +19,15 @@ public class Download extends Thread {
     private String episodeTitle;
     private String episodeUrl;
     private String downloadStatus;
+    private Configuration configuration;
+
+    public Download(Configuration configuration) {
+        this.configuration = configuration;
+    }
 
     @Override
     public void run() {
-        Configuration configuration = Configuration.getInstance();
         System.out.println(Thread.currentThread().getName() + ": " + configuration
-                .initiateDownload()
                 .getNextEpisodeToDownload()
                 .toString());
 

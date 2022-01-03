@@ -62,12 +62,13 @@ class Configuration {
     }
 
     public synchronized Map<String, Map<String, Map<String, String>>> getNextEpisodeToDownload() {
-        Map<String, Map<String, Map<String, String>>> tempNextEpisodeToDownload = nextEpisodeToDownload;
-        updateEpisodeDownloadStatus(tempNextEpisodeToDownload);
-        nextEpisodeToDownload = setNextEpisodeToDownload();
         if (nextEpisodeToDownload.isEmpty()) {
             allDownloadedMessage();
         }
+        Map<String, Map<String, Map<String, String>>> tempNextEpisodeToDownload = nextEpisodeToDownload;
+        updateEpisodeDownloadStatus(tempNextEpisodeToDownload);
+        nextEpisodeToDownload = setNextEpisodeToDownload();
+
         return tempNextEpisodeToDownload;
     }
 

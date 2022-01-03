@@ -18,9 +18,12 @@ public class App {
             Configuration
                     .generate();
         }
+        Configuration configuration = Configuration
+                .getInstance()
+                .initiateDownload();
 
-        for (int i = 1; i <= 150; i++) {
-            Download d = new Download();
+        for (int i = 1; i <= 200; i++) {
+            Download d = new Download(configuration);
             d.start();
         }
 
