@@ -15,27 +15,156 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-class Configuration {   //TODO As singleton ?
+class Configuration {
 
     private static final Logger log = Logger.getLogger(Configuration.class);
 
-    final String viderUrl = "https://vider.info";
-    final String seriesPath = "/dir/+dnv1mm";
+    private static Configuration instance = null;
 
-    final static String tesseractDatapath = "/usr/local/Cellar/tesseract/4.1.3/share/tessdata";
-    final static String tesseractLanguage = "eng";
-    final static String tesseractImageDPI = "96";
+    private static final String viderUrl = "https://vider.info";
+    private static String seriesPath = "/dir/+dnv1mm"; // Nie final bo będzie brane z propertasów
 
-    final static Map<String, Object> configfileMap = new LinkedHashMap<>();
-    final static String configFileName = "configfile.json";
-    final static File configFile = new File(configFileName);
+    private final static String tesseractDatapath = "/usr/local/Cellar/tesseract/4.1.3/share/tessdata";
+    private final static String tesseractLanguage = "eng";
+    private final static String tesseractImageDPI = "96";
 
+    private static Map<String, Map<String, Map<String, String>>> configfileMap = new LinkedHashMap<>();
+    private final static String configFileName = "configfile.json";
+    private final static File configFile = new File(configFileName);
 
-    Configuration getLinks() throws IOException, TesseractException {
+    private Map<String, Map<String, Map<String, String>>> nextEpisodeToDownload;
+
+    public static Configuration getInstance() {
+        Configuration result = instance;
+        if (result == null) {
+            instance = new Configuration();
+        }
+        return instance;
+    }
+
+    private Configuration() {
+    }
+
+    public synchronized Configuration initiateDownload() {
+        configfileMap = configfileToMap();
+        nextEpisodeToDownload = setNextEpisodeToDownload();
+        if (nextEpisodeToDownload.isEmpty()) {
+            allDownloadedMessage();
+        }
+        return this;
+    }
+
+    public synchronized Map<String, Map<String, Map<String, String>>> getNextEpisodeToDownload() {
+        Map<String, Map<String, Map<String, String>>> tempNextEpisodeToDownload = nextEpisodeToDownload;
+        updateEpisodeDownloadStatus(tempNextEpisodeToDownload);
+        nextEpisodeToDownload = setNextEpisodeToDownload();
+        if (nextEpisodeToDownload.isEmpty()) {
+            allDownloadedMessage();
+        }
+        return tempNextEpisodeToDownload;
+    }
+
+    private Map<String, Map<String, Map<String, String>>> setNextEpisodeToDownload() {
+        Map<String, Map<String, Map<String, String>>> episodeToDownloadFullPathMap = new LinkedHashMap<>();
+        for (Map.Entry entry : configfileMap.entrySet()) {
+            if (!entry.getKey().equals("title")) {
+                Map<String, Object> seasonMap = (Map<String, Object>) entry.getValue();
+                for (Map.Entry<String, Object> entry1 : seasonMap.entrySet()) {
+                    Map<String, String> episodeMap = (Map<String, String>) entry1.getValue();
+                    if (episodeMap.get("downloaded").equals("false")) {
+                        String seasonNumber = entry.getKey().toString();
+                        String episodeTitle = entry1.getKey();
+                        String episodeUrl = episodeMap.get("url");
+                        String downloadStatus = episodeMap.get("downloaded");
+
+                        Map<String, String> nextEpisodeToDownloadMap = new LinkedHashMap<>();
+                        Map<String, Map<String, String>> seasonToDownloadEpisodeFromMap = new LinkedHashMap<>();
+
+                        nextEpisodeToDownloadMap.put("url", episodeUrl);
+                        nextEpisodeToDownloadMap.put("downloaded", downloadStatus);
+                        seasonToDownloadEpisodeFromMap.put(episodeTitle, nextEpisodeToDownloadMap);
+                        episodeToDownloadFullPathMap.put(seasonNumber, seasonToDownloadEpisodeFromMap);
+
+                        return episodeToDownloadFullPathMap;
+                    }
+                }
+            }
+        }
+        return episodeToDownloadFullPathMap;
+    }
+
+    void updateEpisodeDownloadStatus(Map<String, Map<String, Map<String, String>>> map) {
+        String seasonNumber = null;
+        String episodeTitle = null;
+        for (Map.Entry entry : map.entrySet()) {
+            Map<String, Object> inLoopSeasonMap = (Map<String, Object>) entry.getValue();
+            for (Map.Entry<String, Object> entry1 : inLoopSeasonMap.entrySet()) {
+                seasonNumber = entry.getKey().toString();
+                episodeTitle = entry1.getKey();
+            }
+        }
+
+        configfileMap.get(seasonNumber)
+                .get(episodeTitle)
+                .replace("downloaded", "inProgress");
+
+        createConfigFile(configfileMap);
+    }
+
+//    void updateEpisodeDownloadStatus(String seasonNumber, String episodeTitle, String newStatus) {
+//        String currentEpisodeDownloadStatus = checkEpisodeDownloadStatus(seasonNumber, episodeTitle);
+//
+//        if (!currentEpisodeDownloadStatus.equals(newStatus)) {
+//            Map<String, Map<String, String>> seasonMap =
+//                    (Map<String, Map<String, String>>) configfileMap
+//                            .get(seasonNumber);
+//
+//            seasonMap.get(episodeTitle).replace("downloaded", newStatus);
+//            log.info("Updated download status of: " + seasonNumber + " -> " + episodeTitle + " to: " + newStatus);
+//
+//            Configuration.update(configfileMap);
+//        } else {
+//            log.info("Status " + newStatus + " for: " + seasonNumber + " -> " + episodeTitle + " already present. Not updating.");
+//        }
+//    }
+
+    String checkEpisodeDownloadStatus(String seasonNumber, String episodeTitle) {
+        Map<String, Map<String, String>> seasonMap =
+                (Map<String, Map<String, String>>) configfileMap
+                        .get(seasonNumber);
+
+        return seasonMap
+                .get(episodeTitle)
+                .get("downloaded");
+    }
+
+    public static boolean checkIfFileExists() {
+        return Configuration.configFile.exists();
+    }
+
+    public static void generate() throws TesseractException, IOException {
+        Configuration
+                .getInstance()
+                .getLinks();
+        createConfigFile(Configuration.configfileMap);
+    }
+
+//    public static Map<String,Object> getConfigurationMap() {
+//        return configfileToMap();
+//    }
+
+    public static void update(Map<String, Map<String, Map<String, String>>> configMap) {
+        createConfigFile(configMap);
+    }
+
+    private Configuration getLinks() throws IOException, TesseractException {
         Document seriesDocument;
         String seriesUrl = viderUrl + seriesPath;
         HttpResponse seriesResponse = HttpRequest.get(seriesUrl).send();
@@ -46,7 +175,10 @@ class Configuration {   //TODO As singleton ?
         }
 
         seriesDocument = Jsoup.parse(seriesResponse.toString());
-        configfileMap.put("title", getSeriesName(seriesDocument));
+        //TODO: Put series title somewhere else than configfileMap.
+        //      Incompatible types - will keep consistant structure
+        //      without series title for now.
+        //configfileMap.put("title", getSeriesName(seriesDocument));
 
         Elements seriesElement = seriesDocument.select("p.title > a");
         seriesElement.forEach(season -> {
@@ -194,18 +326,32 @@ class Configuration {   //TODO As singleton ?
         return gson.toJson(map);
     }
 
-    Configuration createConfigFile(Map<String, Object> map, String configFileName) {
+    private static void createConfigFile(Map<String, Map<String, Map<String, String>>> map) {
         Gson gson = new GsonBuilder()
                 .setPrettyPrinting()
                 .disableHtmlEscaping()
                 .create();
-        try (FileWriter fw = new FileWriter(configFileName)) {
+        try (FileWriter fw = new FileWriter(Configuration.configFileName)) {
             gson.toJson(map, fw);
-            log.info("Created configuration file: " + configFileName);
+            log.info("Generated configuration file: " + Configuration.configFileName);
         } catch (IOException e) {
             log.error("Faild to create configuration file ! ", e);
         }
+    }
 
-        return this;
+    private static Map<String, Map<String, Map<String, String>>> configfileToMap() {
+        Map<String, Map<String, Map<String, String>>> map = null;
+        Gson gson = new Gson();
+        try (Reader reader = Files.newBufferedReader(Paths.get(Configuration.configFileName))) {
+            map = gson.fromJson(reader, Map.class);
+        } catch (IOException e) {
+            log.error("Problems with converting configfile to map !" + e);
+        }
+        return map;
+    }
+
+    private void allDownloadedMessage() {
+        log.info("All episodes download status in " + configFileName + " is set to true.");
+        System.exit(0);
     }
 }

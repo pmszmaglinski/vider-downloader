@@ -4,23 +4,46 @@ import net.sourceforge.tess4j.TesseractException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class App {
+
     private static final Logger log = Logger.getLogger(App.class);
 
     public static void main(String[] args) throws TesseractException, IOException {
-        if (!Configuration.configFile.exists()) {
-            log.info("Preparing configuration file: " + Configuration.configFileName);
-            Configuration configuration = new Configuration();
-            configuration
-                    .getLinks()
-                    .createConfigFile(Configuration.configfileMap, Configuration.configFileName);
+
+        if (!Configuration.checkIfFileExists()) {
+            log.info("Preparing configuration file...");
+            Configuration
+                    .generate();
         }
 
-        // TODO: Run download in threads
-        Download download = new Download()
-                //.loopOverMap();
-                //.downloadFileFromUrl();
-                .getNextEpisodeToDownload();
+        for (int i = 1; i <= 150; i++) {
+            Download d = new Download();
+            d.start();
+        }
+
+//        Configuration configuration = Configuration.getInstance();
+//        System.out.println(
+//                configuration
+//                        .initiateDownload()
+//                        .getNextEpisodeToDownload()
+//                        .toString());
     }
+
+//    public static void main(String[] args) throws InterruptedException {
+//
+//        Counter counter = Counter.getInstance();
+//        System.out.println(counter.count);
+//
+//        ThreadsTest t = new ThreadsTest();
+//        ThreadsTest t1 = new ThreadsTest();
+//
+//        t.start();
+//        t1.start();
+//        t.join();
+//        t1.join();
+//        System.out.println(counter.count);
+//    }
 }
