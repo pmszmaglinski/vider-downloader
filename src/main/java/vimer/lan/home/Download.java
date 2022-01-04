@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class Download extends Thread {
+public final class Download extends Thread {
 
     private static final Logger log = Logger.getLogger(Download.class);
 
@@ -19,39 +19,18 @@ public class Download extends Thread {
     private String episodeTitle;
     private String episodeUrl;
     private String downloadStatus;
-    private Configuration configuration;
+    private DownloadCoordinator downloadCoordinator;
 
-    public Download(Configuration configuration) {
-        this.configuration = configuration;
+    public Download(DownloadCoordinator downloadCoordinator) {
+        this.downloadCoordinator = downloadCoordinator;
     }
 
     @Override
     public void run() {
-        System.out.println(Thread.currentThread().getName() + ": " + configuration
+        System.out.println(Thread.currentThread().getName() + ": " + downloadCoordinator
                 .getNextEpisodeToDownload()
                 .toString());
 
-        //this.configfileMap = configuration.getNextEpisodeToDownload();
-        //System.out.println(Download.currentThread().getName() + ": " + this.configfileMap.toString());
-        //execute();
-    }
-
-    private void execute() {
-//        while (getNextEpisodeToDownload()) {
-//
-//            log.info(Download.currentThread().getName() + ": " + "Downloading: " + this.episodeTitle);
-//
-////            updateEpisodeDownloadStatus(this.seasonNumber, this.episodeTitle, "inProgress");
-//
-//            try {
-//                Thread.sleep(5000);
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-////
-//            updateEpisodeDownloadStatus(this.seasonNumber, this.episodeTitle, "true");
-////            System.out.println(Download.currentThread().getName() + ": Finishing");
-//        }
     }
 
     Download downloadFileFromUrl(String url) throws IOException {
@@ -67,23 +46,4 @@ public class Download extends Thread {
 
         return this;
     }
-
-//    Download loopOverMap() {
-//        String seriesTitle = configfileMap.get("title").toString();
-//        System.out.println(seriesTitle);
-//        configfileMap.forEach((k, v) -> {
-//            if (!k.equals("title")) {
-//                String seasonNumber = k;
-//                Map<String, Object> seasonMap = (Map<String, Object>) v;
-//                seasonMap.forEach((x, y) -> {
-//                    String episodeTitle = x;
-//                    Map<String, String> episodeMap = (Map<String, String>) y;
-//                    String episodeUrl = episodeMap.get("url");
-//                    String episodeDownloadStatus = episodeMap.get("downloaded");
-//                    //downloadFileFromUrl(seriesTitle, seasonNumber, episodeTitle, episodeUrl,episodeDownloadStatus);
-//                });
-//            }
-//        });
-//        return this;
-//    }
 }
