@@ -21,7 +21,7 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-class ConfigurationManager {
+final class ConfigurationManager {
 
     private static final Logger log = Logger.getLogger(ConfigurationManager.class);
 

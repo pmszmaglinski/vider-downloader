@@ -5,7 +5,7 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
-public class App {
+public final class App {
 
     private static final Logger log = Logger.getLogger(App.class);
 
