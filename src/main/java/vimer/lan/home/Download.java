@@ -19,7 +19,7 @@ public final class Download extends Thread {
     private String episodeTitle;
     private String episodeUrl;
     private String downloadStatus;
-    private DownloadCoordinator downloadCoordinator;
+    private final DownloadCoordinator downloadCoordinator;
 
     public Download(DownloadCoordinator downloadCoordinator) {
         this.downloadCoordinator = downloadCoordinator;

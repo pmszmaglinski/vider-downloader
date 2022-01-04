@@ -50,7 +50,7 @@ class ConfigurationManager {
     }
 
     public static boolean checkIfFileExists() {
-        return ConfigurationManager.configFile.exists();
+        return configFile.exists();
     }
 
     public ConfigurationManager setSeriesPath(String link) {
@@ -209,9 +209,9 @@ class ConfigurationManager {
                 .setPrettyPrinting()
                 .disableHtmlEscaping()
                 .create();
-        try (FileWriter fw = new FileWriter(ConfigurationManager.configFileName)) {
+        try (FileWriter fw = new FileWriter(configFileName)) {
             gson.toJson(map, fw);
-            log.info("Generated configuration file: " + ConfigurationManager.configFileName);
+            log.info("Generated configuration file: " + configFileName);
         } catch (IOException e) {
             log.error("Faild to create configuration file ! ", e);
         }
@@ -220,7 +220,7 @@ class ConfigurationManager {
     static Map<String, Map<String, Map<String, String>>> configfileToMap() {
         Map<String, Map<String, Map<String, String>>> map = null;
         Gson gson = new Gson();
-        try (Reader reader = Files.newBufferedReader(Paths.get(ConfigurationManager.configFileName))) {
+        try (Reader reader = Files.newBufferedReader(Paths.get(configFileName))) {
             map = gson.fromJson(reader, Map.class);
         } catch (IOException e) {
             log.error("Problems with converting configfile to map !" + e);
