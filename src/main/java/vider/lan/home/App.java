@@ -1,4 +1,4 @@
-package vimer.lan.home;
+package vider.lan.home;
 
 import net.sourceforge.tess4j.TesseractException;
 import org.apache.log4j.Logger;

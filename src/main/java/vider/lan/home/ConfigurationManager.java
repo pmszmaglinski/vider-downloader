@@ -1,4 +1,4 @@
-package vimer.lan.home;
+package vider.lan.home;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -211,7 +211,7 @@ final class ConfigurationManager {
                 .create();
         try (FileWriter fw = new FileWriter(configFileName)) {
             gson.toJson(map, fw);
-            log.info("Generated configuration file: " + configFileName);
+//            log.info("Generated configuration file: " + configFileName);
         } catch (IOException e) {
             log.error("Faild to create configuration file ! ", e);
         }
