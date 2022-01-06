@@ -7,6 +7,7 @@ import jodd.http.HttpResponse;
 import jodd.io.FileUtil;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -16,10 +17,12 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 final class ConfigurationManager {
 
@@ -37,6 +40,9 @@ final class ConfigurationManager {
     private final static Map<String, Map<String, Map<String, String>>> configfileMap = new LinkedHashMap<>();
     final static String configFileName = "configfile.json";
     private final static File configFile = new File(configFileName);
+
+    private final static String seriesInfoFileName = "series-info";
+    private final static File seriesInfoFile = new File(seriesInfoFileName);
 
     public static ConfigurationManager getInstance() {
         ConfigurationManager result = instance;
@@ -74,9 +80,7 @@ final class ConfigurationManager {
         }
 
         seriesDocument = Jsoup.parse(seriesResponse.toString());
-        //TODO: Put series title somewhere else than configfileMap.
-        //      Incompatible types - will keep consistant structure
-        //      without series title for now.
+        createSeriesInfoFile(seriesInfoFile,getSeriesName(seriesDocument));
         //configfileMap.put("title", getSeriesName(seriesDocument));
 
         Elements seriesElement = seriesDocument.select("p.title > a");
@@ -217,6 +221,10 @@ final class ConfigurationManager {
         }
     }
 
+    static void createSeriesInfoFile(File seriesInfoFile, String seriesName) throws IOException {
+        FileUtils.writeStringToFile(seriesInfoFile, seriesName, StandardCharsets.UTF_8);
+    }
+
     static Map<String, Map<String, Map<String, String>>> configfileToMap() {
         Map<String, Map<String, Map<String, String>>> map = null;
         Gson gson = new Gson();
@@ -228,10 +236,10 @@ final class ConfigurationManager {
         return map;
     }
 
-//        private String getSeriesName(Document doc) {
-//        return Objects.requireNonNull(doc.select("title").first())
-//                .text();
-//    }
+        private String getSeriesName(Document doc) {
+        return Objects.requireNonNull(doc.select("title").first())
+                .text();
+    }
 //
 //    private void addElementsToMap(Document doc, Map<String, String> map) {
 //        Elements el = doc.select("p.title > a");
