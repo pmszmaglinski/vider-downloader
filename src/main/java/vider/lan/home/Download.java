@@ -50,9 +50,6 @@ public final class Download extends Thread {
     }
 
     Download downloadFileFromUrl(String seasonNumber, String episodeTitle, String url) throws IOException {
-
-        //TODO: Parse series name from series-info file to variable
-        //      and use it as series name instead of 'Cudowne lata'
         String downloadDirectory = System.getProperty("user.home") +
                 File.separator +
                 seriesTitle +
