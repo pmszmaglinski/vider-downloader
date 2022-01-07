@@ -2,6 +2,7 @@ package vider.lan.home;
 
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -11,6 +12,7 @@ public final class DownloadCoordinator {
     private static DownloadCoordinator instance = null;
 
     private static Map<String, Map<String, Map<String, String>>> configfileMap = new LinkedHashMap<>();
+    private static String seriesTitle;
     private Map<String, Map<String, Map<String, String>>> nextEpisodeToDownload;
 
     public static DownloadCoordinator getInstance() {
@@ -24,13 +26,18 @@ public final class DownloadCoordinator {
     private DownloadCoordinator() {
     }
 
-    public synchronized DownloadCoordinator initiateDownload() {
+    public synchronized DownloadCoordinator initiateDownload() throws IOException {
         configfileMap = ConfigurationManager.configfileToMap();
+        seriesTitle = ConfigurationManager.seriesTitleFileToString();
         nextEpisodeToDownload = setNextEpisodeToDownload();
         if (nextEpisodeToDownload.isEmpty()) {
             allDownloadedMessage();
         }
         return this;
+    }
+
+    public String getSeriesTitle() {
+        return seriesTitle;
     }
 
     public synchronized Map<String, Map<String, Map<String, String>>> getNextEpisodeToDownload() {

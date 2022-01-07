@@ -28,6 +28,7 @@ public final class Download extends Thread {
     @Override
     public void run() {
         this.episodeConfigfileMap = downloadCoordinator.getNextEpisodeToDownload();
+        this.seriesTitle = downloadCoordinator.getSeriesTitle();
 
         while (!this.episodeConfigfileMap.isEmpty()) {
             this.seasonNumber = (String) episodeConfigfileMap.keySet().toArray()[0];
@@ -50,9 +51,11 @@ public final class Download extends Thread {
 
     Download downloadFileFromUrl(String seasonNumber, String episodeTitle, String url) throws IOException {
 
+        //TODO: Parse series name from series-info file to variable
+        //      and use it as series name instead of 'Cudowne lata'
         String downloadDirectory = System.getProperty("user.home") +
                 File.separator +
-                "Cudowne Lata" +
+                seriesTitle +
                 File.separator +
                 seasonNumber;
 

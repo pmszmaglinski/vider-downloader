@@ -80,8 +80,8 @@ final class ConfigurationManager {
         }
 
         seriesDocument = Jsoup.parse(seriesResponse.toString());
-        createSeriesInfoFile(seriesInfoFile,getSeriesName(seriesDocument));
-        //configfileMap.put("title", getSeriesName(seriesDocument));
+        createSeriesInfoFile(seriesInfoFile, getSeriesTitle(seriesDocument));
+        //configfileMap.put("title", getSeriesTitle(seriesDocument));
 
         Elements seriesElement = seriesDocument.select("p.title > a");
         seriesElement.forEach(season -> {
@@ -221,10 +221,6 @@ final class ConfigurationManager {
         }
     }
 
-    static void createSeriesInfoFile(File seriesInfoFile, String seriesName) throws IOException {
-        FileUtils.writeStringToFile(seriesInfoFile, seriesName, StandardCharsets.UTF_8);
-    }
-
     static Map<String, Map<String, Map<String, String>>> configfileToMap() {
         Map<String, Map<String, Map<String, String>>> map = null;
         Gson gson = new Gson();
@@ -236,11 +232,19 @@ final class ConfigurationManager {
         return map;
     }
 
-        private String getSeriesName(Document doc) {
+    static void createSeriesInfoFile(File seriesInfoFile, String seriesName) throws IOException {
+        FileUtils.writeStringToFile(seriesInfoFile, seriesName, StandardCharsets.UTF_8);
+    }
+    
+    static String seriesTitleFileToString() throws IOException {
+        return FileUtils.readFileToString(seriesInfoFile,StandardCharsets.UTF_8).trim();
+    }
+
+    private String getSeriesTitle(Document doc) {
         return Objects.requireNonNull(doc.select("title").first())
                 .text();
     }
-//
+
 //    private void addElementsToMap(Document doc, Map<String, String> map) {
 //        Elements el = doc.select("p.title > a");
 //        el.forEach(element -> map.put(element.html(), element.attr("href")));
