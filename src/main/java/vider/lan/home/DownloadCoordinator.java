@@ -29,6 +29,7 @@ public final class DownloadCoordinator {
     public synchronized DownloadCoordinator initiateDownload() throws IOException {
         configfileMap = ConfigurationManager.configfileToMap();
         seriesTitle = ConfigurationManager.seriesTitleFileToString();
+        setInProgressToFalse();
         nextEpisodeToDownload = setNextEpisodeToDownload();
         if (nextEpisodeToDownload.isEmpty()) {
             allDownloadedMessage();
@@ -45,7 +46,7 @@ public final class DownloadCoordinator {
             allDownloadedMessage();
         }
         Map<String, Map<String, Map<String, String>>> tempNextEpisodeToDownload = nextEpisodeToDownload;
-        updateEpisodeDownloadStatus(tempNextEpisodeToDownload);
+        updateEpisodeDownloadStatus(tempNextEpisodeToDownload, "inProgress");
         nextEpisodeToDownload = setNextEpisodeToDownload();
 
         return tempNextEpisodeToDownload;
@@ -54,13 +55,13 @@ public final class DownloadCoordinator {
     private Map<String, Map<String, Map<String, String>>> setNextEpisodeToDownload() {
         Map<String, Map<String, Map<String, String>>> episodeToDownloadFullPathMap = new LinkedHashMap<>();
         for (Map.Entry entry : configfileMap.entrySet()) {
-            if (!entry.getKey().equals("title")) {
+            if (!entry.getKey().equals("title")) { //TODO: To remove - no 'title' entry anymore
                 Map<String, Object> seasonMap = (Map<String, Object>) entry.getValue();
-                for (Map.Entry<String, Object> entry1 : seasonMap.entrySet()) {
-                    Map<String, String> episodeMap = (Map<String, String>) entry1.getValue();
+                for (Map.Entry<String, Object> episodesMap : seasonMap.entrySet()) {
+                    Map<String, String> episodeMap = (Map<String, String>) episodesMap.getValue();
                     if (episodeMap.get("downloaded").equals("false")) {
                         String seasonNumber = entry.getKey().toString();
-                        String episodeTitle = entry1.getKey();
+                        String episodeTitle = episodesMap.getKey();
                         String episodeUrl = episodeMap.get("url");
                         String downloadStatus = episodeMap.get("downloaded");
 
@@ -80,22 +81,35 @@ public final class DownloadCoordinator {
         return episodeToDownloadFullPathMap;
     }
 
-    void updateEpisodeDownloadStatus(Map<String, Map<String, Map<String, String>>> map) {
-        String seasonNumber = null;
-        String episodeTitle = null;
-        for (Map.Entry entry : map.entrySet()) {
-            Map<String, Object> inLoopSeasonMap = (Map<String, Object>) entry.getValue();
-            for (Map.Entry<String, Object> entry1 : inLoopSeasonMap.entrySet()) {
-                seasonNumber = entry.getKey().toString();
-                episodeTitle = entry1.getKey();
-            }
-        }
+    void updateEpisodeDownloadStatus(Map<String, Map<String, Map<String, String>>> map, String downloadStatus) {
+        String seasonNumber = (String) map.keySet().toArray()[0];
+        String episodeTitle = (String) map.get(seasonNumber).keySet().toArray()[0];
 
         configfileMap.get(seasonNumber)
                 .get(episodeTitle)
-                .replace("downloaded", "inProgress");
+                .replace("downloaded", downloadStatus);
 
         ConfigurationManager.createConfigFile(configfileMap);
+    }
+
+    public void setInProgressToFalse() {
+        for (Map.Entry entry : configfileMap.entrySet()) {
+            Map<String, Map<String,String>> seasonMap = (Map<String, Map<String,String>>) entry.getValue();
+            for (Map.Entry<String, Map<String,String>> episodesMap : seasonMap.entrySet()) {
+                Map<String, String> episodeMap = episodesMap.getValue();
+                if (episodeMap.get("downloaded").equals("inProgress")) {
+                    String seasonNumber = entry.getKey().toString();
+                    String episodeTitle = episodesMap.getKey();
+
+                    configfileMap.get(seasonNumber)
+                            .get(episodeTitle)
+                            .replace("downloaded", "false");
+
+                    log.info("Setting back failed downloads back to false for: " + seasonNumber + " " + episodeTitle);
+                }
+            }
+            ConfigurationManager.createConfigFile(configfileMap);
+        }
     }
 
     private void allDownloadedMessage() {

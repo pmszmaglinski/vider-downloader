@@ -40,7 +40,11 @@ public final class Download extends Thread {
 
             try {
                 downloadFileFromUrl(seasonNumber, episodeTitle, episodeUrl);
+                //TODO: Test it
+                downloadCoordinator.updateEpisodeDownloadStatus(episodeConfigfileMap, "true");
             } catch (IOException e) {
+                //TODO: Test it
+                downloadCoordinator.updateEpisodeDownloadStatus(episodeConfigfileMap, "false");
                 e.printStackTrace();
             }
 
