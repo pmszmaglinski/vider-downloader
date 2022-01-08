@@ -103,7 +103,7 @@ public final class DownloadCoordinator {
                             .get(episodeTitle)
                             .replace("downloaded", "false");
 
-                    log.info("Setting back failed downloads back to false for: " + seasonNumber + " " + episodeTitle);
+                    log.info("Setting failed downloads back to false for: " + seasonNumber + " " + episodeTitle);
                 }
             }
             ConfigurationManager.createConfigFile(configfileMap);
