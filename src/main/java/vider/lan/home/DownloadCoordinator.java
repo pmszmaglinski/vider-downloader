@@ -55,7 +55,6 @@ public final class DownloadCoordinator {
     private Map<String, Map<String, Map<String, String>>> setNextEpisodeToDownload() {
         Map<String, Map<String, Map<String, String>>> episodeToDownloadFullPathMap = new LinkedHashMap<>();
         for (Map.Entry entry : configfileMap.entrySet()) {
-            if (!entry.getKey().equals("title")) { //TODO: To remove - no 'title' entry anymore
                 Map<String, Object> seasonMap = (Map<String, Object>) entry.getValue();
                 for (Map.Entry<String, Object> episodesMap : seasonMap.entrySet()) {
                     Map<String, String> episodeMap = (Map<String, String>) episodesMap.getValue();
@@ -76,7 +75,6 @@ public final class DownloadCoordinator {
                         return episodeToDownloadFullPathMap;
                     }
                 }
-            }
         }
         return episodeToDownloadFullPathMap;
     }
