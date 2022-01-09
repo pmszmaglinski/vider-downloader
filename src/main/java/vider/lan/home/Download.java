@@ -74,7 +74,7 @@ public final class Download extends Thread {
                 .send();
 
         byte[] rawBytes = response.bodyBytes();
-        File mp4File = new File(downloadDirectory, episodeTitle);
+        File mp4File = new File(downloadDirectory, episodeTitle + ".mp4");
         FileUtil.writeBytes(mp4File, rawBytes);
 
         return this;
