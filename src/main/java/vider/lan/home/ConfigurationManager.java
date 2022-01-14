@@ -33,7 +33,7 @@ final class ConfigurationManager {
     private static final String viderUrl = "https://vider.info";
     private String seriesPath = null;
 
-    private final static String tesseractDatapath = "/usr/local/Cellar/tesseract/4.1.3/share/tessdata";
+    private final static String tesseractDatapath = System.getenv("TESSDATA_PREFIX");
     private final static String tesseractLanguage = "eng";
     private final static String tesseractImageDPI = "96";
 
