@@ -56,6 +56,8 @@ public final class Download extends Thread {
     Download downloadFileFromUrl(String seasonNumber, String episodeTitle, String url) throws IOException {
         String downloadDirectory = System.getProperty("user.home") +
                 File.separator +
+                "ViderDownloader" +
+                File.separator +
                 seriesTitle +
                 File.separator +
                 seasonNumber;

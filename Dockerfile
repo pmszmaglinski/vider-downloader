@@ -18,9 +18,14 @@ RUN apt-get -y update && \
                     libtesseract-dev &&\
     rm -rf /var/lib/apt/lists/*
 
-COPY out/artifacts/vider_downloader_jar/vider-downloader.jar /app/
-WORKDIR /app
-ENTRYPOINT ["/usr/bin/java","-jar","vider-downloader.jar"]
+ARG dataDirectory=/root/ViderDownloader
+ARG workdirDirectory=/data
 
-#TODO: - Create files (logs,configs) outside of container. Mount external volume ?
-#      - Where file are downloaded ? Contaner user's homedir ?
+RUN mkdir -p $dataDirectory && \
+    ln -s $dataDirectory $workdirDirectory
+
+WORKDIR $workdirDirectory
+
+COPY out/artifacts/vider_downloader_jar/vider-downloader.jar /app/
+ENTRYPOINT ["/usr/bin/java","-Xmx2G","-jar","/app/vider-downloader.jar"]
+

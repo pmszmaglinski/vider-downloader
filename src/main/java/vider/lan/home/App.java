@@ -31,7 +31,7 @@ public final class App {
                 .getInstance()
                 .initiateDownload();
 
-        for (int i = 1; i <= 3; i++) {
+        for (int i = 1; i <= 4; i++) {
             Download d = new Download(downloadCoordinator);
             d.start();
         }
