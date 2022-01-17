@@ -123,9 +123,10 @@ final class ConfigurationManager {
 
                 episodeDocument = Jsoup.parse(episodeResponse.toString());
                 String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
-
+                
                 episodeResponse = HttpRequest.get(episodeIntermediateLink2)
                         .header("referer", "https://vider.info/")
+                        .header("Range", "bytes=0-0")
                         .send();
 
                 if (episodeResponse.statusCode() == 404) {
@@ -136,7 +137,13 @@ final class ConfigurationManager {
                         log.error("Failed on getting episodes final link ! ", e);
                     }
                 }
-                String episodeDownloadLink = episodeResponse.header("Location");
+
+                String episodeDownloadLink = null;
+                if (episodeResponse.statusCode() == 206 && episodeResponse.contentType().contains("video/mp4")) {
+                    episodeDownloadLink = episodeIntermediateLink2;
+                } else if (episodeResponse.statusCode() == 302 && episodeResponse.contentType().contains("text/html")) {
+                    episodeDownloadLink = episodeResponse.header("Location");
+                }
 
                 episodeMap.put("url", episodeDownloadLink);
                 episodeMap.put("downloaded", "false");
@@ -235,9 +242,9 @@ final class ConfigurationManager {
     static void createSeriesInfoFile(File seriesInfoFile, String seriesName) throws IOException {
         FileUtils.writeStringToFile(seriesInfoFile, seriesName, StandardCharsets.UTF_8);
     }
-    
+
     static String seriesTitleFileToString() throws IOException {
-        return FileUtils.readFileToString(seriesInfoFile,StandardCharsets.UTF_8).trim();
+        return FileUtils.readFileToString(seriesInfoFile, StandardCharsets.UTF_8).trim();
     }
 
     private String getSeriesTitle(Document doc) {
