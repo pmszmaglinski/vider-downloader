@@ -79,6 +79,8 @@ final class ConfigurationManager {
             response = fixCaptcha(docUrl, doc, response);
         }
         doc = Jsoup.parse(response.toString());
+        createSeriesInfoFile(seriesInfoFile, getSeriesTitle(doc));
+
         doc.select("p.title > a").forEach(x -> {
             String capturedLink, linkDescription;
             try {

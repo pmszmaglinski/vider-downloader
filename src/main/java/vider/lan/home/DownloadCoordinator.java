@@ -93,22 +93,18 @@ public final class DownloadCoordinator {
 
     public void setInProgressToFalse() {
         for (Map.Entry entry : configfileMap.entrySet()) {
-            Map<String, Map<String,String>> seasonMap = (Map<String, Map<String,String>>) entry.getValue();
-            for (Map.Entry<String, Map<String,String>> episodesMap : seasonMap.entrySet()) {
-                Map<String, String> episodeMap = episodesMap.getValue();
-                if (episodeMap.get("downloaded").equals("inProgress")) {
-                    String seasonNumber = entry.getKey().toString();
-                    String episodeTitle = episodesMap.getKey();
+            Map<String, String> episodeMap = (Map<String, String>) entry.getValue();
+            if (episodeMap.get("downloaded").equals("inProgress")) {
+                String episodeTitle = entry.getKey().toString();
 
-                    configfileMap.get(seasonNumber)
-                            .get(episodeTitle)
-                            .replace("downloaded", "false");
+                configfileMap
+                        .get(episodeTitle)
+                        .replace("downloaded", "false");
 
-                    log.info("Setting failed downloads back to false for: " + seasonNumber + " " + episodeTitle);
-                }
+                log.info("Setting not finished downloads back to false for: " + episodeTitle);
             }
-            ConfigurationManager.createConfigFile(configfileMap);
         }
+        ConfigurationManager.createConfigFile(configfileMap);
     }
 
     private void allDownloadedMessage() {
