@@ -20,9 +20,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 final class ConfigurationManager {
 
@@ -37,7 +35,7 @@ final class ConfigurationManager {
     private final static String tesseractLanguage = "eng";
     private final static String tesseractImageDPI = "96";
 
-    private final static Map<String, Map<String, Map<String, String>>> configfileMap = new LinkedHashMap<>();
+    private final static Map<String, Map<String, String>> configfileMap = new LinkedHashMap<>();
     final static String configFileName = "configfile.json";
     private final static File configFile = new File(configFileName);
 
@@ -65,96 +63,93 @@ final class ConfigurationManager {
     }
 
     public void generate() throws TesseractException, IOException {
-        getLinks();
+        getLinks(seriesPath);
         createConfigFile(configfileMap);
     }
 
-    private void getLinks() throws IOException, TesseractException {
-        Document seriesDocument;
-        String seriesUrl = viderUrl + seriesPath;
-        HttpResponse seriesResponse = HttpRequest.get(seriesUrl).send();
+    //TODO: - Parse every link properly - if it's dir - get movies links under it
+    //                                  - if it's movie link - download it
 
-        if (seriesResponse.statusCode() == 404) {
-            seriesDocument = Jsoup.parse(seriesResponse.toString());
-            seriesResponse = fixCaptcha(seriesUrl, seriesDocument, seriesResponse);
+    void getLinks(String url) throws TesseractException, IOException {
+        Document doc;
+        String docUrl = viderUrl + url;
+        HttpResponse response = HttpRequest.get(docUrl).send();
+        if (response.statusCode() == 404) {
+            doc = Jsoup.parse(response.toString());
+            response = fixCaptcha(docUrl, doc, response);
         }
+        doc = Jsoup.parse(response.toString());
+        doc.select("p.title > a").forEach(x -> {
+            String capturedLink, linkDescription;
+            try {
+                capturedLink = x.attr("href");
+                linkDescription = x.html();
 
-        seriesDocument = Jsoup.parse(seriesResponse.toString());
-        createSeriesInfoFile(seriesInfoFile, getSeriesTitle(seriesDocument));
-        //configfileMap.put("title", getSeriesTitle(seriesDocument));
+                if (capturedLink.startsWith("/dir/+d"))
+                    log.info("Omitting found directory: " + capturedLink + " " + linkDescription);
 
-        Elements seriesElement = seriesDocument.select("p.title > a");
-        seriesElement.forEach(season -> {
-            String seasonName = season.html();
-            String seasonPath = season.attr("href");
-            String seasonUrl = viderUrl + seasonPath;
-            Map<String, Map<String, String>> seasonMap = new LinkedHashMap<>();
+                else if (capturedLink.startsWith("/vid/+f")) {
+                    log.info("Found movie: " + capturedLink + " -> " + linkDescription);
 
-            HttpResponse seasonResponse = HttpRequest.get(seasonUrl).send();
-            Document seasonDocument;
+                    String episodeIntermediateLink1 = viderUrl + capturedLink;
+                    Map<String, String> episodeMap = new LinkedHashMap<>();
 
-            if (seasonResponse.statusCode() == 404) {
-                seasonDocument = Jsoup.parse(seasonResponse.toString());
-                try {
-                    seasonResponse = fixCaptcha(seasonUrl, seasonDocument, seasonResponse);
-                } catch (IOException | TesseractException e) {
-                    log.error("Failed on getting seasons ! ", e);
-                }
+                    HttpResponse episodeResponse = HttpRequest.get(episodeIntermediateLink1).send();
+                    Document episodeDocument;
+                    if (episodeResponse.statusCode() == 404) {
+                        episodeDocument = Jsoup.parse(episodeResponse.toString());
+                        try {
+                            episodeResponse = fixCaptcha(episodeIntermediateLink1, episodeDocument, episodeResponse);
+                        } catch (IOException | TesseractException e) {
+                            log.error("Failed on getting episodes ! ", e);
+                        }
+                    }
+
+                    episodeDocument = Jsoup.parse(episodeResponse.toString());
+                    String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
+
+                    episodeResponse = HttpRequest.get(episodeIntermediateLink2)
+                            .header("referer", "https://vider.info/")
+                            .header("Range", "bytes=0-0")
+                            .send();
+
+                    if (episodeResponse.statusCode() == 404) {
+                        episodeDocument = Jsoup.parse(episodeResponse.toString());
+                        try {
+                            episodeResponse = fixCaptcha(episodeIntermediateLink2, episodeDocument, episodeResponse);
+                        } catch (IOException | TesseractException e) {
+                            log.error("Failed on getting episodes final link ! ", e);
+                        }
+                    }
+
+                    String episodeDownloadLink;
+                    if (episodeResponse.statusCode() == 206 && episodeResponse.contentType().contains("video/mp4")) {
+                        episodeDownloadLink = episodeIntermediateLink2;
+                    } else if (episodeResponse.statusCode() == 302 && episodeResponse.contentType().contains("text/html")) {
+                        episodeDownloadLink = episodeResponse.header("Location");
+                    } else throw new RuntimeException("Unknown return status code for episode link capture: "
+                            + episodeResponse);
+
+                    episodeMap.put("url", episodeDownloadLink);
+                    episodeMap.put("downloaded", "false");
+
+                    configfileMap.put(linkDescription, episodeMap);
+                    log.info("Finished generating config for episode: " + linkDescription);
+
+                } else throw new RuntimeException("Found unknown link: " + capturedLink + linkDescription);
+
+                getLinks(x.attr("href"));
+            } catch (TesseractException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-
-            seasonDocument = Jsoup.parse(seasonResponse.toString());
-            Elements seasonElement = seasonDocument.select("p.title > a");
-            seasonElement.forEach(episode -> {
-                String episodeName = episode.html();
-                String episodePath = episode.attr("href");
-                String episodeIntermediateLink1 = viderUrl + episodePath;
-                Map<String, String> episodeMap = new LinkedHashMap<>();
-
-                HttpResponse episodeResponse = HttpRequest.get(episodeIntermediateLink1).send();
-                Document episodeDocument;
-                if (episodeResponse.statusCode() == 404) {
-                    episodeDocument = Jsoup.parse(episodeResponse.toString());
-                    try {
-                        episodeResponse = fixCaptcha(episodeIntermediateLink1, episodeDocument, episodeResponse);
-                    } catch (IOException | TesseractException e) {
-                        log.error("Failed on getting episodes ! ", e);
-                    }
-                }
-
-                episodeDocument = Jsoup.parse(episodeResponse.toString());
-                String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
-                
-                episodeResponse = HttpRequest.get(episodeIntermediateLink2)
-                        .header("referer", "https://vider.info/")
-                        .header("Range", "bytes=0-0")
-                        .send();
-
-                if (episodeResponse.statusCode() == 404) {
-                    episodeDocument = Jsoup.parse(episodeResponse.toString());
-                    try {
-                        episodeResponse = fixCaptcha(episodeIntermediateLink2, episodeDocument, episodeResponse);
-                    } catch (IOException | TesseractException e) {
-                        log.error("Failed on getting episodes final link ! ", e);
-                    }
-                }
-
-                String episodeDownloadLink = null;
-                if (episodeResponse.statusCode() == 206 && episodeResponse.contentType().contains("video/mp4")) {
-                    episodeDownloadLink = episodeIntermediateLink2;
-                } else if (episodeResponse.statusCode() == 302 && episodeResponse.contentType().contains("text/html")) {
-                    episodeDownloadLink = episodeResponse.header("Location");
-                }
-
-                episodeMap.put("url", episodeDownloadLink);
-                episodeMap.put("downloaded", "false");
-                seasonMap.put(episodeName, episodeMap);
-                log.info("Finished generating configuration for episode: " + episodeName);
-            });
-
-            configfileMap.put(seasonName, seasonMap);
-            log.info("Finished generating config for season: " + seasonName);
         });
     }
+
+//    private void getLinks() throws TesseractException, IOException {
+//        getDocument(seriesPath);
+//    }
 
     private String getEpisodeIntermediateLink2(Document doc) {
         return doc.select("link[rel=video_src]")
@@ -215,7 +210,7 @@ final class ConfigurationManager {
         return response;
     }
 
-    static void createConfigFile(Map<String, Map<String, Map<String, String>>> map) {
+    static void createConfigFile(Map<String, Map<String, String>> map) {
         Gson gson = new GsonBuilder()
                 .setPrettyPrinting()
                 .disableHtmlEscaping()
@@ -228,8 +223,8 @@ final class ConfigurationManager {
         }
     }
 
-    static Map<String, Map<String, Map<String, String>>> configfileToMap() {
-        Map<String, Map<String, Map<String, String>>> map = null;
+    static Map<String, Map<String, String>> configfileToMap() {
+        Map<String, Map<String, String>> map = null;
         Gson gson = new Gson();
         try (Reader reader = Files.newBufferedReader(Paths.get(configFileName))) {
             map = gson.fromJson(reader, Map.class);
