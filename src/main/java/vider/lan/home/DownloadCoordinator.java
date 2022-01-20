@@ -30,11 +30,11 @@ public final class DownloadCoordinator {
         configfileMap = ConfigurationManager.configfileToMap();
         seriesTitle = ConfigurationManager.seriesTitleFileToString();
         setInProgressToFalse();
-        System.exit(0);
-//        nextEpisodeToDownload = setNextEpisodeToDownload();
-//        if (nextEpisodeToDownload.isEmpty()) {
-//            allDownloadedMessage();
-//        }
+        nextEpisodeToDownload = setNextEpisodeToDownload();
+
+        if (nextEpisodeToDownload.isEmpty()) {
+            allDownloadedMessage();
+        }
         return this;
     }
 
@@ -42,53 +42,15 @@ public final class DownloadCoordinator {
         return seriesTitle;
     }
 
-//    public synchronized Map<String, Map<String, Map<String, String>>> getNextEpisodeToDownload() {
-//        if (nextEpisodeToDownload.isEmpty()) {
-//            allDownloadedMessage();
-//        }
-//        Map<String, Map<String, String>> tempNextEpisodeToDownload = nextEpisodeToDownload;
-//        updateEpisodeDownloadStatus(tempNextEpisodeToDownload, "inProgress");
-//        nextEpisodeToDownload = setNextEpisodeToDownload();
-//
-//        return tempNextEpisodeToDownload;
-//    }
+    public synchronized Map<String, Map<String, String>> getNextEpisodeToDownload() {
+        if (nextEpisodeToDownload.isEmpty()) {
+            allDownloadedMessage();
+        }
+        Map<String, Map<String, String>> tempNextEpisodeToDownload = nextEpisodeToDownload;
+        updateEpisodeDownloadStatus(tempNextEpisodeToDownload, "inProgress");
+        nextEpisodeToDownload = setNextEpisodeToDownload();
 
-//    private Map<String, Map<String, String>> setNextEpisodeToDownload() {
-//        Map<String, Map<String, String>> episodeToDownloadFullPathMap = new LinkedHashMap<>();
-//        for (Map.Entry entry : configfileMap.entrySet()) {
-//                Map<String, Object> seasonMap = (Map<String, Object>) entry.getValue();
-//                for (Map.Entry<String, Object> episodesMap : seasonMap.entrySet()) {
-//                    Map<String, String> episodeMap = (Map<String, String>) episodesMap.getValue();
-//                    if (episodeMap.get("downloaded").equals("false")) {
-//                        String seasonNumber = entry.getKey().toString();
-//                        String episodeTitle = episodesMap.getKey();
-//                        String episodeUrl = episodeMap.get("url");
-//                        String downloadStatus = episodeMap.get("downloaded");
-//
-//                        Map<String, String> nextEpisodeToDownloadMap = new LinkedHashMap<>();
-//                        Map<String, Map<String, String>> seasonToDownloadEpisodeFromMap = new LinkedHashMap<>();
-//
-//                        nextEpisodeToDownloadMap.put("url", episodeUrl);
-//                        nextEpisodeToDownloadMap.put("downloaded", downloadStatus);
-//                        seasonToDownloadEpisodeFromMap.put(episodeTitle, nextEpisodeToDownloadMap);
-//                        episodeToDownloadFullPathMap.put(seasonNumber, seasonToDownloadEpisodeFromMap);
-//
-//                        return episodeToDownloadFullPathMap;
-//                    }
-//                }
-//        }
-//        return episodeToDownloadFullPathMap;
-//    }
-
-    void updateEpisodeDownloadStatus(Map<String, Map<String, String>> map, String downloadStatus) {
-        String seasonNumber = (String) map.keySet().toArray()[0];
-        String episodeTitle = (String) map.get(seasonNumber).keySet().toArray()[0];
-
-        configfileMap.get(seasonNumber)
-                .get(episodeTitle)
-                .replace("downloaded", downloadStatus);
-
-        ConfigurationManager.createConfigFile(configfileMap);
+        return tempNextEpisodeToDownload;
     }
 
     public void setInProgressToFalse() {
@@ -104,6 +66,39 @@ public final class DownloadCoordinator {
                 log.info("Setting not finished downloads back to false for: " + episodeTitle);
             }
         }
+        ConfigurationManager.createConfigFile(configfileMap);
+    }
+
+    private Map<String, Map<String, String>> setNextEpisodeToDownload() {
+        Map<String, Map<String, String>> episodeToDownloadFullPathMap = new LinkedHashMap<>();
+
+        for (Map.Entry entry : configfileMap.entrySet()) {
+            Map<String, String> episodeMap = (Map<String, String>) entry.getValue();
+
+                if (episodeMap.get("downloaded").equals("false")) {
+                    String episodeTitle = entry.getKey().toString();
+                    String episodeUrl = episodeMap.get("url");
+                    String downloadStatus = episodeMap.get("downloaded");
+
+                    Map<String, String> nextEpisodeToDownloadMap = new LinkedHashMap<>();
+
+                    nextEpisodeToDownloadMap.put("url", episodeUrl);
+                    nextEpisodeToDownloadMap.put("downloaded", downloadStatus);
+                    episodeToDownloadFullPathMap.put(episodeTitle, nextEpisodeToDownloadMap);
+
+                    return episodeToDownloadFullPathMap;
+                }
+        }
+        return episodeToDownloadFullPathMap;
+    }
+
+    void updateEpisodeDownloadStatus(Map<String, Map<String, String>> map, String downloadStatus) {
+        String episodeTitle = (String) map.keySet().toArray()[0];
+
+        configfileMap
+                .get(episodeTitle)
+                .replace("downloaded", downloadStatus);
+
         ConfigurationManager.createConfigFile(configfileMap);
     }
 
