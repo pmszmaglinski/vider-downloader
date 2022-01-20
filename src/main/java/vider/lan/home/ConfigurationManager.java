@@ -30,7 +30,7 @@ final class ConfigurationManager {
     private static ConfigurationManager instance = null;
 
     private static final String viderUrl = "https://vider.info";
-    private String seriesPath = null;
+    private String urlPath = null;
 
     private final static String tesseractDatapath = System.getenv("TESSDATA_PREFIX");
     private final static String tesseractLanguage = "eng";
@@ -58,13 +58,13 @@ final class ConfigurationManager {
         return configFile.exists();
     }
 
-    public ConfigurationManager setSeriesPath(String link) {
-        this.seriesPath = link;
+    public ConfigurationManager setUrlPath(String link) {
+        this.urlPath = link;
         return this;
     }
 
     public void generate() throws TesseractException, IOException {
-        getLinks(seriesPath);
+        getLinks(urlPath);
         createConfigFile(configfileMap);
     }
 

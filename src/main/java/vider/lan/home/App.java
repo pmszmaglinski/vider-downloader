@@ -23,7 +23,7 @@ public final class App {
             log.info("Preparing configuration file...");
             ConfigurationManager
                     .getInstance()
-                    .setSeriesPath(args[0])
+                    .setUrlPath(args[0])
                     .generate();
         } else {
             log.info("Found configuration file: " + ConfigurationManager.configFileName);
