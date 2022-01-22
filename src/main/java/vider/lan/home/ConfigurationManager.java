@@ -82,16 +82,19 @@ final class ConfigurationManager {
         doc = Jsoup.parse(response.toString());
         createSeriesInfoFile(seriesInfoFile, getSeriesTitle(doc));
 
+        //TODO: If link starts with /vid/+f start algorythm from line 96 :D
+
         doc.select("p.title > a").forEach(x -> {
             String capturedLink, linkDescription;
             try {
                 capturedLink = x.attr("href");
                 linkDescription = x.html();
 
-                if (capturedLink.startsWith("/dir/+d"))
-                    log.info("Omitting found directory: " + capturedLink + " " + linkDescription);
+                if (capturedLink.startsWith("/dir/+d")) {
+                    log.info("Entering directory: " + capturedLink + " " + linkDescription);
+                    getLinks(x.attr("href"));
+                } else if (capturedLink.startsWith("/vid/+f")) {
 
-                else if (capturedLink.startsWith("/vid/+f")) {
                     log.info("Found movie: " + capturedLink + " -> " + linkDescription);
 
                     String episodeIntermediateLink1 = viderUrl + capturedLink;
@@ -109,8 +112,8 @@ final class ConfigurationManager {
                     }
 
                     episodeDocument = Jsoup.parse(episodeResponse.toString());
-                    String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
 
+                    String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
                     episodeResponse = HttpRequest.get(episodeIntermediateLink2)
                             .header("referer", "https://vider.info/")
                             .header("Range", "bytes=0-0")
@@ -141,7 +144,7 @@ final class ConfigurationManager {
 
                 } else throw new RuntimeException("Found unknown link: " + capturedLink + linkDescription);
 
-                getLinks(x.attr("href"));
+
             } catch (TesseractException e) {
                 e.printStackTrace();
             } catch (IOException e) {
