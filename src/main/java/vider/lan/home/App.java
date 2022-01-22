@@ -29,14 +29,14 @@ public final class App {
             log.info("Found configuration file: " + ConfigurationManager.configFileName);
         }
 
-        DownloadCoordinator downloadCoordinator = DownloadCoordinator
-                .getInstance()
-                .initiateDownload();
-
-        for (int i = 1; i <= 4; i++) {
-            Download d = new Download(downloadCoordinator);
-            d.start();
-        }
+//        DownloadCoordinator downloadCoordinator = DownloadCoordinator
+//                .getInstance()
+//                .initiateDownload();
+//
+//        for (int i = 1; i <= 4; i++) {
+//            Download d = new Download(downloadCoordinator);
+//            d.start();
+//        }
     }
 
 
