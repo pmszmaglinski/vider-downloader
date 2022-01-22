@@ -72,14 +72,9 @@ final class ConfigurationManager {
     //                                  - if it's movie link - download it
 
     void getLinks(String url) throws TesseractException, IOException {
-        Document doc;
         String docUrl = viderUrl + url;
-        HttpResponse response = HttpRequest.get(docUrl).send();
-        if (response.statusCode() == 404) {
-            doc = Jsoup.parse(response.toString());
-            response = fixCaptcha(docUrl, doc, response);
-        }
-        doc = Jsoup.parse(response.toString());
+        HttpResponse response = getResponse(docUrl);
+        Document doc = Jsoup.parse(response.toString());
         createSeriesInfoFile(seriesInfoFile, getSeriesTitle(doc));
 
         //TODO: If link starts with /vid/+f start algorythm from line 96 :D
@@ -97,36 +92,13 @@ final class ConfigurationManager {
 
                     log.info("Found movie: " + capturedLink + " -> " + linkDescription);
 
-                    String episodeIntermediateLink1 = viderUrl + capturedLink;
                     Map<String, String> episodeMap = new LinkedHashMap<>();
-
-                    HttpResponse episodeResponse = HttpRequest.get(episodeIntermediateLink1).send();
-                    Document episodeDocument;
-                    if (episodeResponse.statusCode() == 404) {
-                        episodeDocument = Jsoup.parse(episodeResponse.toString());
-                        try {
-                            episodeResponse = fixCaptcha(episodeIntermediateLink1, episodeDocument, episodeResponse);
-                        } catch (IOException | TesseractException e) {
-                            log.error("Failed on getting episodes ! ", e);
-                        }
-                    }
-
-                    episodeDocument = Jsoup.parse(episodeResponse.toString());
+                    String episodeIntermediateLink1 = viderUrl + capturedLink;
+                    HttpResponse episodeResponse = getResponse(episodeIntermediateLink1);
+                    Document episodeDocument = Jsoup.parse(episodeResponse.toString());
 
                     String episodeIntermediateLink2 = getEpisodeIntermediateLink2(episodeDocument);
-                    episodeResponse = HttpRequest.get(episodeIntermediateLink2)
-                            .header("referer", "https://vider.info/")
-                            .header("Range", "bytes=0-0")
-                            .send();
-
-                    if (episodeResponse.statusCode() == 404) {
-                        episodeDocument = Jsoup.parse(episodeResponse.toString());
-                        try {
-                            episodeResponse = fixCaptcha(episodeIntermediateLink2, episodeDocument, episodeResponse);
-                        } catch (IOException | TesseractException e) {
-                            log.error("Failed on getting episodes final link ! ", e);
-                        }
-                    }
+                    episodeResponse = getResponse(episodeIntermediateLink2);
 
                     String episodeDownloadLink;
                     if (episodeResponse.statusCode() == 206 && episodeResponse.contentType().contains("video/mp4")) {
@@ -151,6 +123,19 @@ final class ConfigurationManager {
                 e.printStackTrace();
             }
         });
+    }
+
+    private HttpResponse getResponse(String docUrl) throws TesseractException, IOException {
+        Document doc;
+        HttpResponse response = HttpRequest.get(docUrl)
+                .header("referer", "https://vider.info/")
+                .header("Range", "bytes=0-0")
+                .send();
+        if (response.statusCode() == 404) {
+            doc = Jsoup.parse(response.toString());
+            response = fixCaptcha(docUrl, doc, response);
+        }
+        return response;
     }
 
     private String getEpisodeIntermediateLink2(Document doc) {
