@@ -45,6 +45,7 @@ public final class DownloadCoordinator {
     public synchronized Map<String, Map<String, String>> getNextEpisodeToDownload() {
         if (nextEpisodeToDownload.isEmpty()) {
             allDownloadedMessage();
+            return nextEpisodeToDownload;
         }
         Map<String, Map<String, String>> tempNextEpisodeToDownload = nextEpisodeToDownload;
         updateEpisodeDownloadStatus(tempNextEpisodeToDownload, "inProgress");
@@ -75,19 +76,20 @@ public final class DownloadCoordinator {
         for (Map.Entry entry : configfileMap.entrySet()) {
             Map<String, String> episodeMap = (Map<String, String>) entry.getValue();
 
-                if (episodeMap.get("downloaded").equals("false")) {
-                    String episodeTitle = entry.getKey().toString();
-                    String episodeUrl = episodeMap.get("url");
-                    String downloadStatus = episodeMap.get("downloaded");
+            if (episodeMap.get("downloaded").equals("false")) {
 
-                    Map<String, String> nextEpisodeToDownloadMap = new LinkedHashMap<>();
+                String episodeTitle = entry.getKey().toString();
+                String episodeUrl = episodeMap.get("url");
+                String downloadStatus = episodeMap.get("downloaded");
 
-                    nextEpisodeToDownloadMap.put("url", episodeUrl);
-                    nextEpisodeToDownloadMap.put("downloaded", downloadStatus);
-                    episodeToDownloadFullPathMap.put(episodeTitle, nextEpisodeToDownloadMap);
+                Map<String, String> nextEpisodeToDownloadMap = new LinkedHashMap<>();
 
-                    return episodeToDownloadFullPathMap;
-                }
+                nextEpisodeToDownloadMap.put("url", episodeUrl);
+                nextEpisodeToDownloadMap.put("downloaded", downloadStatus);
+                episodeToDownloadFullPathMap.put(episodeTitle, nextEpisodeToDownloadMap);
+
+                return episodeToDownloadFullPathMap;
+            }
         }
         return episodeToDownloadFullPathMap;
     }
@@ -103,8 +105,8 @@ public final class DownloadCoordinator {
     }
 
     private void allDownloadedMessage() {
-        log.info("All episodes download status in " + ConfigurationManager.configFileName + " is set to true.");
-        System.exit(0);
+        log.info("Nothing left to download in " + ConfigurationManager.configFileName);
+        //System.exit(0);
     }
 
 
