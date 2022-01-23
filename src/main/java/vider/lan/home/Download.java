@@ -45,9 +45,7 @@ public final class Download extends Thread {
                 downloadCoordinator.updateEpisodeDownloadStatus(episodeConfigfileMap, "false");
                 e.printStackTrace();
             }
-
             this.episodeConfigfileMap = downloadCoordinator.getNextEpisodeToDownload();
-
         }
     }
 

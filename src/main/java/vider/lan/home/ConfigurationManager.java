@@ -40,8 +40,8 @@ final class ConfigurationManager {
     final static String configFileName = "configfile.json";
     private final static File configFile = new File(configFileName);
 
-    private final static String seriesInfoFileName = "series-info";
-    private final static File seriesInfoFile = new File(seriesInfoFileName);
+    private final static String movieInfoFileName = "series-info";
+    private final static File movieInfoFile = new File(movieInfoFileName);
 
     public static ConfigurationManager getInstance() {
         ConfigurationManager result = instance;
@@ -73,7 +73,7 @@ final class ConfigurationManager {
         HttpResponse response = getResponse(docUrl);
         Document doc = Jsoup.parse(response.toString());
 
-        createSeriesInfoFile(seriesInfoFile, getMovieTitle(doc));
+        createMovieInfoFile(getMovieTitle(doc));
 
         if (url.startsWith("/vid/+f")) {
             log.info("Got movie link...");
@@ -222,12 +222,12 @@ final class ConfigurationManager {
         return map;
     }
 
-    static void createSeriesInfoFile(File seriesInfoFile, String seriesName) throws IOException {
-        FileUtils.writeStringToFile(seriesInfoFile, seriesName, StandardCharsets.UTF_8);
+    static void createMovieInfoFile(String seriesName) throws IOException {
+        FileUtils.writeStringToFile(ConfigurationManager.movieInfoFile, seriesName, StandardCharsets.UTF_8);
     }
 
     static String seriesTitleFileToString() throws IOException {
-        return FileUtils.readFileToString(seriesInfoFile, StandardCharsets.UTF_8).trim();
+        return FileUtils.readFileToString(ConfigurationManager.movieInfoFile, StandardCharsets.UTF_8).trim();
     }
 
     private String getMovieTitle(Document doc) {
