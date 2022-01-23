@@ -68,42 +68,38 @@ final class ConfigurationManager {
         createConfigFile(configfileMap);
     }
 
-    //TODO: - Parse every link properly - if it's dir - get movies links under it
-    //                                  - if it's movie link - download it
-
     void getLinks(String url) throws TesseractException, IOException {
         String docUrl = viderUrl + url;
         HttpResponse response = getResponse(docUrl);
         Document doc = Jsoup.parse(response.toString());
 
-        createSeriesInfoFile(seriesInfoFile, getSeriesTitle(doc));
+        createSeriesInfoFile(seriesInfoFile, getMovieTitle(doc));
 
-        //TODO: If link starts with /vid/+f start algorythm from line 96 :D
         if (url.startsWith("/vid/+f")) {
-            System.out.println("Podano link do filmu !");
-        }
-        doc.select("p.title > a").forEach(x -> {
-            String capturedLink, linkDescription;
-            try {
-                capturedLink = x.attr("href");
-                linkDescription = x.html();
-
-                if (capturedLink.startsWith("/dir/+d")) {
-                    log.info("Entering directory: " + capturedLink + " " + linkDescription);
-                    getLinks(x.attr("href"));
-                } else if (capturedLink.startsWith("/vid/+f")) {
-                    log.info("Found movie: " + capturedLink + " -> " + linkDescription);
-                    Map<String,String> episodeMap = getEpisodeMap(capturedLink);
-                    configfileMap.put(linkDescription, episodeMap);
-                    log.info("Finished generating config for episode: " + linkDescription);
-                } else throw new RuntimeException("Found unknown link: " + capturedLink + linkDescription);
-
-            } catch (TesseractException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+            log.info("Got movie link...");
+            Map<String, String> episodeMap = getEpisodeMap(url);
+            configfileMap.put(getMovieTitle(doc), episodeMap);
+            log.info("Finished generating config for movie: " + getMovieTitle(doc));
+        } else if (url.startsWith("/dir/+d")) {
+            doc.select("p.title > a").forEach(x -> {
+                String capturedLink, linkDescription;
+                try {
+                    capturedLink = x.attr("href");
+                    linkDescription = x.html();
+                    if (capturedLink.startsWith("/dir/+d")) {
+                        log.info("Entering directory: " + capturedLink + " " + linkDescription);
+                        getLinks(linkDescription);
+                    } else if (capturedLink.startsWith("/vid/+f")) {
+                        log.info("Found movie: " + capturedLink + " -> " + linkDescription);
+                        Map<String, String> episodeMap = getEpisodeMap(capturedLink);
+                        configfileMap.put(linkDescription, episodeMap);
+                        log.info("Finished generating config for episode: " + linkDescription);
+                    } else throw new RuntimeException("Found unknown link: " + capturedLink + linkDescription);
+                } catch (TesseractException | IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } else throw new RuntimeException("Provided unknown link " + url);
     }
 
     private Map<String, String> getEpisodeMap(String capturedLink) throws TesseractException, IOException {
@@ -129,6 +125,7 @@ final class ConfigurationManager {
         return episodeMap;
 
     }
+
     private HttpResponse getResponse(String docUrl) throws TesseractException, IOException {
         Document doc;
         HttpResponse response = HttpRequest.get(docUrl)
@@ -233,7 +230,7 @@ final class ConfigurationManager {
         return FileUtils.readFileToString(seriesInfoFile, StandardCharsets.UTF_8).trim();
     }
 
-    private String getSeriesTitle(Document doc) {
+    private String getMovieTitle(Document doc) {
         return Objects.requireNonNull(doc.select("title").first())
                 .text();
     }
