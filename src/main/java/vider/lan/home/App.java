@@ -12,8 +12,7 @@ public final class App {
     private static final Logger log = Logger.getLogger(App.class);
 
     public static void main(String[] args) throws TesseractException, IOException {
-        if(args.length == 0 && !ConfigurationManager.checkIfFileExists())
-        {
+        if (args.length == 0 && !ConfigurationManager.checkIfFileExists()) {
             System.out.println("Provide a series link as an arugment !");
             System.exit(0);
         }

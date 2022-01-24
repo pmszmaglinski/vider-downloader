@@ -226,7 +226,7 @@ final class ConfigurationManager {
         FileUtils.writeStringToFile(ConfigurationManager.movieInfoFile, seriesName, StandardCharsets.UTF_8);
     }
 
-    static String seriesTitleFileToString() throws IOException {
+    static String movieTitleFileToString() throws IOException {
         return FileUtils.readFileToString(ConfigurationManager.movieInfoFile, StandardCharsets.UTF_8).trim();
     }
 

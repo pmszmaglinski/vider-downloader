@@ -12,7 +12,7 @@ public final class DownloadCoordinator {
     private static DownloadCoordinator instance = null;
 
     private static Map<String, Map<String, String>> configfileMap = new LinkedHashMap<>();
-    private static String seriesTitle;
+    private static String movieTitle;
     private Map<String, Map<String, String>> nextEpisodeToDownload;
 
     public Integer numberOfEpisodesLeftToDownload = null;
@@ -30,7 +30,7 @@ public final class DownloadCoordinator {
 
     public synchronized DownloadCoordinator initiateDownload() throws IOException {
         configfileMap = ConfigurationManager.configfileToMap();
-        seriesTitle = ConfigurationManager.seriesTitleFileToString();
+        movieTitle = ConfigurationManager.movieTitleFileToString();
         setInProgressToFalse();
         numberOfEpisodesLeftToDownload = getNumberOfEpisodesLeftToDownload();
         nextEpisodeToDownload = setNextEpisodeToDownload();
@@ -41,8 +41,8 @@ public final class DownloadCoordinator {
         return this;
     }
 
-    public String getSeriesTitle() {
-        return seriesTitle;
+    public String getMovieTitle() {
+        return movieTitle;
     }
 
     public synchronized Map<String, Map<String, String>> getNextEpisodeToDownload() {

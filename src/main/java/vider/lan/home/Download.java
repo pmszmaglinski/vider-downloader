@@ -14,7 +14,7 @@ public final class Download extends Thread {
     private static final Logger log = Logger.getLogger(Download.class);
 
     Map<String, Map<String, String>> episodeConfigfileMap;
-    private String seriesTitle;
+    private String movieTitle;
     private String episodeTitle;
     private String episodeUrl;
     private String downloadStatus;
@@ -27,7 +27,7 @@ public final class Download extends Thread {
     @Override
     public void run() {
         this.episodeConfigfileMap = downloadCoordinator.getNextEpisodeToDownload();
-        this.seriesTitle = downloadCoordinator.getSeriesTitle();
+        this.movieTitle = downloadCoordinator.getMovieTitle();
 
         while (!this.episodeConfigfileMap.isEmpty()) {
             this.episodeTitle = (String) episodeConfigfileMap.keySet().toArray()[0];
@@ -54,7 +54,7 @@ public final class Download extends Thread {
                 File.separator +
                 "ViderDownloader" +
                 File.separator +
-                seriesTitle;
+                movieTitle;
 
         File folder = new File(downloadDirectory);
         if (!folder.exists()) {
