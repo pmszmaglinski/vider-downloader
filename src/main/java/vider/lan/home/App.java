@@ -32,7 +32,6 @@ public final class App {
         DownloadCoordinator downloadCoordinator = DownloadCoordinator
                 .getInstance()
                 .initiateDownload();
-        //TODO: Get number of episodes to download (with downloaded 'false') to set thread number
 
         log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " left to download.");
 
