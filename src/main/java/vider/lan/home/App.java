@@ -14,7 +14,7 @@ public final class App {
     public static void main(String[] args) throws TesseractException, IOException {
         if(args.length == 0 && !ConfigurationManager.checkIfFileExists())
         {
-            System.out.println("Provide series link as an arugment !");
+            System.out.println("Provide a series link as an arugment !");
             System.exit(0);
         }
 
@@ -32,13 +32,15 @@ public final class App {
         DownloadCoordinator downloadCoordinator = DownloadCoordinator
                 .getInstance()
                 .initiateDownload();
+        //TODO: Get number of episodes to download (with downloaded 'false') to set thread number
 
-        for (int i = 1; i <= 5; i++) {
+        log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " left to download.");
+
+        for (int i = 1; i <= 10; i++) {
             Download d = new Download(downloadCoordinator);
             d.start();
         }
     }
-
 
 //public static void main(String[] args) {
 //    String response302 = "https://stream.vider.info/video/113722/v.mp4?uid=0";

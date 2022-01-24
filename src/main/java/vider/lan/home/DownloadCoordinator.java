@@ -15,6 +15,8 @@ public final class DownloadCoordinator {
     private static String seriesTitle;
     private Map<String, Map<String, String>> nextEpisodeToDownload;
 
+    public Integer numberOfEpisodesLeftToDownload = null;
+
     public static DownloadCoordinator getInstance() {
         DownloadCoordinator result = instance;
         if (result == null) {
@@ -30,6 +32,7 @@ public final class DownloadCoordinator {
         configfileMap = ConfigurationManager.configfileToMap();
         seriesTitle = ConfigurationManager.seriesTitleFileToString();
         setInProgressToFalse();
+        numberOfEpisodesLeftToDownload = getNumberOfEpisodesLeftToDownload();
         nextEpisodeToDownload = setNextEpisodeToDownload();
 
         if (nextEpisodeToDownload.isEmpty()) {
@@ -68,6 +71,16 @@ public final class DownloadCoordinator {
             }
         }
         ConfigurationManager.createConfigFile(configfileMap);
+    }
+
+    private Integer getNumberOfEpisodesLeftToDownload() {
+        Integer number = Math.toIntExact(configfileMap.values()
+                .stream()
+                .filter(v -> v.get("downloaded")
+                        .equals("false"))
+                .count());
+
+        return number;
     }
 
     private Map<String, Map<String, String>> setNextEpisodeToDownload() {
