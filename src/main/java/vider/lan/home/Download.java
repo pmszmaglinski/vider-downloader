@@ -63,16 +63,38 @@ public final class Download extends Thread {
             }
         }
 
+        Long movieSizeBytes = getMovieSizeBytes(url);
+
+//        HttpResponse response = HttpRequest
+//                .get(url)
+//                .charset("UTF-8")
+//                .header("referer", "https://vider.info/")
+//                .send();
+
         HttpResponse response = HttpRequest
                 .get(url)
                 .charset("UTF-8")
                 .header("referer", "https://vider.info/")
                 .send();
 
+
         byte[] rawBytes = response.bodyBytes();
         File mp4File = new File(downloadDirectory, episodeTitle + ".mp4");
         FileUtil.writeBytes(mp4File, rawBytes);
 
         return this;
+    }
+
+    private Long getMovieSizeBytes(String url) {
+        HttpResponse response = HttpRequest
+                .get(url)
+                .charset("UTF-8")
+                .header("referer", "https://vider.info/")
+                .header("Range", "bytes=0-0")
+                .send();
+
+        String movieSize = response.header("Content-Range").replaceAll("^.*/","");
+
+        return Long.parseLong(movieSize);
     }
 }

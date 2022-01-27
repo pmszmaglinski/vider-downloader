@@ -32,9 +32,12 @@ public final class App {
                 .getInstance()
                 .initiateDownload();
 
-        log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " left to download.");
+        log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " episodes left to download.");
 
-        for (int i = 1; i <= 10; i++) {
+        Integer threadNumber = downloadCoordinator.numberOfEpisodesLeftToDownload;
+        if (threadNumber > 10) threadNumber = 10;
+
+        for (int i = 1; i <= threadNumber; i++) {
             Download d = new Download(downloadCoordinator);
             d.start();
         }
