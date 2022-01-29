@@ -42,23 +42,4 @@ public final class App {
             d.start();
         }
     }
-
-//public static void main(String[] args) {
-//    String response302 = "https://stream.vider.info/video/113722/v.mp4?uid=0";
-//    String response206 = "https://stream.vider.info/video/13859/v.mp4?uid=0";
-//
-//    HttpResponse episodeResponse = HttpRequest.get(response302)
-//            .header("referer", "https://vider.info/")
-//            .header("Range", "bytes=0-0")
-//            .send();
-//
-//    HttpResponse episodeResponse2 = HttpRequest.get(response206)
-//            .header("referer", "https://vider.info/")
-//            .header("Range", "bytes=0-0")
-//            .send();
-//
-//    System.out.println("Response 302: Content-type: " + episodeResponse.contentType().contains("text/html"));
-//    System.out.println("Response 206: Content-type: " + episodeResponse2.contentType().contains("video/mp4"));
-//}
-
 }
