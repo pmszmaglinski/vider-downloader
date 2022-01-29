@@ -1,12 +1,11 @@
 package vider.lan.home;
 
-import jodd.http.HttpRequest;
-import jodd.http.HttpResponse;
-import jodd.io.FileUtil;
+
 import org.apache.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Map;
 
 public final class Download extends Thread {
@@ -63,38 +62,32 @@ public final class Download extends Thread {
             }
         }
 
-        Long movieSizeBytes = getMovieSizeBytes(url);
-
-//        HttpResponse response = HttpRequest
-//                .get(url)
-//                .charset("UTF-8")
-//                .header("referer", "https://vider.info/")
-//                .send();
-
-        HttpResponse response = HttpRequest
-                .get(url)
-                .charset("UTF-8")
-                .header("referer", "https://vider.info/")
-                .send();
-
-
-        byte[] rawBytes = response.bodyBytes();
         File mp4File = new File(downloadDirectory, episodeTitle + ".mp4");
-        FileUtil.writeBytes(mp4File, rawBytes);
+        URL downloadUrl = new URL(url);
+
+        HttpURLConnection http = (HttpURLConnection) downloadUrl.openConnection();
+        http.setRequestProperty("referer", "https://vider.info/");
+        double fileSize = (double) http.getContentLengthLong();
+        BufferedInputStream in = new BufferedInputStream(http.getInputStream());
+        FileOutputStream fos = new FileOutputStream(mp4File);
+        BufferedOutputStream bout = new BufferedOutputStream(fos, 1024);
+
+        final int BUFFER_SIZE = 16384;
+        byte[] buffer = new byte[BUFFER_SIZE];
+        double downloaded = 0.00;
+        int read = 0;
+        double percentDownloaded = 0.00;
+
+        while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
+            bout.write(buffer, 0, read);
+            downloaded += read;
+            percentDownloaded = (downloaded * 100) / fileSize;
+            String percent = String.format("%.2f", percentDownloaded);
+            System.out.print("Downloaded " + percent + "%\r");
+        }
+        bout.close();
+        in.close();
 
         return this;
-    }
-
-    private Long getMovieSizeBytes(String url) {
-        HttpResponse response = HttpRequest
-                .get(url)
-                .charset("UTF-8")
-                .header("referer", "https://vider.info/")
-                .header("Range", "bytes=0-0")
-                .send();
-
-        String movieSize = response.header("Content-Range").replaceAll("^.*/","");
-
-        return Long.parseLong(movieSize);
     }
 }
