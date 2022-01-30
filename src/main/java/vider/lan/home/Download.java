@@ -8,6 +8,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
+import me.tongfei.progressbar.*;
+
 public final class Download extends Thread {
 
     private static final Logger log = Logger.getLogger(Download.class);
@@ -74,16 +76,24 @@ public final class Download extends Thread {
 
         final int BUFFER_SIZE = 16384;
         byte[] buffer = new byte[BUFFER_SIZE];
-        double downloaded = 0.00;
+        double downloaded = 0;
         int read = 0;
-        double percentDownloaded = 0.00;
+//      double percentDownloaded = 0;
+        ProgressBarBuilder pbb = new ProgressBarBuilder()
+                .setTaskName(episodeTitle)
+                .setInitialMax((long) fileSize)
+                .setUnit("MiB", 1048576)
+                .showSpeed();
 
-        while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
-            bout.write(buffer, 0, read);
-            downloaded += read;
-            percentDownloaded = (downloaded * 100) / fileSize;
-            String percent = String.format("%.2f", percentDownloaded);
-            System.out.print("Downloaded " + percent + "%\r");
+        try (ProgressBar pb = pbb.build()) {
+            while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
+                bout.write(buffer, 0, read);
+                downloaded += read;
+//                percentDownloaded = (downloaded * 100) / fileSize;
+                pb.stepTo((long) downloaded).refresh();
+//                String percent = String.format("%.2f", percentDownloaded);
+//                System.out.print("Downloaded " + percent + "%\r");
+            }
         }
         bout.close();
         in.close();
