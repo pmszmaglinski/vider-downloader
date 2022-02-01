@@ -78,7 +78,6 @@ public final class Download extends Thread {
         byte[] buffer = new byte[BUFFER_SIZE];
         double downloaded = 0;
         int read = 0;
-//      double percentDownloaded = 0;
 
         ProgressBarBuilder pbb = new ProgressBarBuilder()
                 .setTaskName(episodeTitle)
@@ -86,22 +85,17 @@ public final class Download extends Thread {
                 .setUnit("MiB", 1048576)
                 .showSpeed();
 
-        //try (ProgressBar pb = pbb.build()) {
         Display display = Display.getInstance();
         display.registerProgressBar(pbb);
         while (!display.areProgressBarsBuilded) {
             System.out.println("Waiting for progress bar to build...");
             Thread.sleep(1000);
         }
+
         while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
             bout.write(buffer, 0, read);
             downloaded += read;
             display.updateBar(episodeTitle, (long) downloaded);
-//                percentDownloaded = (downloaded * 100) / fileSize;
-            // pb.stepTo((long) downloaded).refresh();
-//                String percent = String.format("%.2f", percentDownloaded);
-//                System.out.print("Downloaded " + percent + "%\r");
-            // }
         }
         bout.close();
         in.close();
