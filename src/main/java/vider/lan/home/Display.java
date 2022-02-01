@@ -6,7 +6,8 @@ import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 
-public class Display extends Thread {
+public class Display extends Thread {   //TODO: Handle next movie download in same thread
+                                        //      and finish display when all downloaded
 
     private static final Logger log = Logger.getLogger(App.class);
 
