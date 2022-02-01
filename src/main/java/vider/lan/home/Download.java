@@ -41,7 +41,7 @@ public final class Download extends Thread {
                 downloadFileFromUrl(episodeTitle, episodeUrl);
                 log.info("Successfully downloaded: " + " " + episodeTitle);
                 downloadCoordinator.updateEpisodeDownloadStatus(episodeConfigfileMap, "true");
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
                 log.info("Download failed for: " + episodeTitle);
                 downloadCoordinator.updateEpisodeDownloadStatus(episodeConfigfileMap, "false");
                 e.printStackTrace();
@@ -50,7 +50,7 @@ public final class Download extends Thread {
         }
     }
 
-    Download downloadFileFromUrl(String episodeTitle, String url) throws IOException {
+    Download downloadFileFromUrl(String episodeTitle, String url) throws IOException, InterruptedException {
         String downloadDirectory = System.getProperty("user.home") +
                 File.separator +
                 "ViderDownloader" +
@@ -79,21 +79,29 @@ public final class Download extends Thread {
         double downloaded = 0;
         int read = 0;
 //      double percentDownloaded = 0;
+
         ProgressBarBuilder pbb = new ProgressBarBuilder()
                 .setTaskName(episodeTitle)
                 .setInitialMax((long) fileSize)
                 .setUnit("MiB", 1048576)
                 .showSpeed();
 
-        try (ProgressBar pb = pbb.build()) {
-            while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
-                bout.write(buffer, 0, read);
-                downloaded += read;
+        //try (ProgressBar pb = pbb.build()) {
+        Display display = Display.getInstance();
+        display.registerProgressBar(pbb);
+        while (!display.areProgressBarsBuilded) {
+            System.out.println("Waiting for progress bar to build...");
+            Thread.sleep(1000);
+        }
+        while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
+            bout.write(buffer, 0, read);
+            downloaded += read;
+            display.updateBar(episodeTitle, (long) downloaded);
 //                percentDownloaded = (downloaded * 100) / fileSize;
-                pb.stepTo((long) downloaded).refresh();
+            // pb.stepTo((long) downloaded).refresh();
 //                String percent = String.format("%.2f", percentDownloaded);
 //                System.out.print("Downloaded " + percent + "%\r");
-            }
+            // }
         }
         bout.close();
         in.close();
