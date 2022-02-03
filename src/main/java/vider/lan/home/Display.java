@@ -28,9 +28,17 @@ public class Display extends Thread {   //TODO: Handle next movie download in sa
         return instance;
     }
 
-    void registerProgressBar(ProgressBarBuilder pbb) {
+    synchronized void registerProgressBarBuilder(ProgressBarBuilder pbb) {
         progressBarBuilders.add(pbb);
         System.out.println("Registered thread for " + pbb);
+    }
+
+    void updateBar(String episodeTitle, long downloaded) {
+        ProgressBar pb = progressBars.stream()
+                .filter(progressBar -> episodeTitle.equals(progressBar.getTaskName()))
+                .findAny()
+                .orElse(null);
+        progressBars.get((progressBars.indexOf(pb))).stepTo(downloaded);
     }
 
     @Override
@@ -60,14 +68,6 @@ public class Display extends Thread {   //TODO: Handle next movie download in sa
         while (!progressBars.isEmpty()) {
 
         }
-
     }
 
-    void updateBar(String episodeTitle, long downloaded) {
-        ProgressBar pb = progressBars.stream()
-                .filter(progressBar -> episodeTitle.equals(progressBar.getTaskName()))
-                .findAny()
-                .orElse(null);
-        progressBars.get((progressBars.indexOf(pb))).stepTo(downloaded);
-    }
 }

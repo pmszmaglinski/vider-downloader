@@ -51,24 +51,16 @@ public final class Download extends Thread {
     }
 
     Download downloadFileFromUrl(String episodeTitle, String url) throws IOException, InterruptedException {
-        String downloadDirectory = System.getProperty("user.home") +
-                File.separator +
-                "ViderDownloader" +
-                File.separator +
-                movieTitle;
 
-        File folder = new File(downloadDirectory);
-        if (!folder.exists()) {
-            if (folder.mkdirs()) {
-                log.info("Folder was created: " + downloadDirectory);
-            }
-        }
+        String downloadDirectory = prepareDownloadDirectory();
 
         File mp4File = new File(downloadDirectory, episodeTitle + ".mp4");
         URL downloadUrl = new URL(url);
 
         HttpURLConnection http = (HttpURLConnection) downloadUrl.openConnection();
         http.setRequestProperty("referer", "https://vider.info/");
+        http.setRequestProperty("User-Agent", "curl/7.64.1");
+
         double fileSize = (double) http.getContentLengthLong();
         BufferedInputStream in = new BufferedInputStream(http.getInputStream());
         FileOutputStream fos = new FileOutputStream(mp4File);
@@ -86,20 +78,39 @@ public final class Download extends Thread {
                 .showSpeed();
 
         Display display = Display.getInstance();
-        display.registerProgressBar(pbb);
+        display.registerProgressBarBuilder(pbb);
+
         while (!display.areProgressBarsBuilded) {
-            System.out.println("Waiting for progress bar to build...");
+            System.out.print("Waiting for progress bar to build...\r");
             Thread.sleep(1000);
         }
 
         while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
             bout.write(buffer, 0, read);
             downloaded += read;
+
             display.updateBar(episodeTitle, (long) downloaded);
         }
         bout.close();
         in.close();
 
         return this;
+    }
+
+    String prepareDownloadDirectory() {
+        String downloadDirectory = System.getProperty("user.home") +
+                File.separator +
+                "ViderDownloader" +
+                File.separator +
+                movieTitle;
+
+        File folder = new File(downloadDirectory);
+        if (!folder.exists()) {
+            if (folder.mkdirs()) {
+                log.info("Folder was created: " + downloadDirectory);
+            }
+        }
+
+        return downloadDirectory;
     }
 }
