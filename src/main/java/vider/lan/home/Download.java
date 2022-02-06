@@ -81,7 +81,7 @@ public final class Download extends Thread {
         display.registerProgressBarBuilder(pbb);
 
         while (!display.areProgressBarsBuilded) {
-            System.out.print("Waiting for progress bar to build...\r");
+            log.info("Waiting for progress bar to build...\r");
             Thread.sleep(1000);
         }
 
@@ -93,6 +93,7 @@ public final class Download extends Thread {
         }
         bout.close();
         in.close();
+        display.closeBar(episodeTitle);
 
         return this;
     }

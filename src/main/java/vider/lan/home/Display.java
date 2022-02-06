@@ -7,13 +7,14 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 
 public class Display extends Thread {   //TODO: Handle next movie download in same thread
-                                        //      and finish display when all downloaded
+    //      and finish display when all downloaded
 
     private static final Logger log = Logger.getLogger(App.class);
 
     ArrayList<ProgressBarBuilder> progressBarBuilders = new ArrayList<>();
     ArrayList<ProgressBar> progressBars = new ArrayList<>();
-    Boolean areProgressBarsBuilded = false;
+    static Boolean areProgressBarsBuilded = false;
+    static Boolean newProgressBarRegistered = false;
 
     private static Display instance = null;
 
@@ -30,42 +31,82 @@ public class Display extends Thread {   //TODO: Handle next movie download in sa
 
     synchronized void registerProgressBarBuilder(ProgressBarBuilder pbb) {
         progressBarBuilders.add(pbb);
-        System.out.println("Registered thread for " + pbb);
+        //log.info("Registered thread for " + pbb);
+        newProgressBarRegistered = true;
+        areProgressBarsBuilded = false;
     }
 
-    void updateBar(String episodeTitle, long downloaded) {
-        ProgressBar pb = progressBars.stream()
+    ProgressBar getProgressBarByEpisodeTitle(String episodeTitle) {
+        return progressBars.stream()
                 .filter(progressBar -> episodeTitle.equals(progressBar.getTaskName()))
                 .findAny()
                 .orElse(null);
-        progressBars.get((progressBars.indexOf(pb))).stepTo(downloaded);
     }
 
-    @Override
-    public void run() {
+    void updateBar(String episodeTitle, long downloaded) {
+        ProgressBar pb = getProgressBarByEpisodeTitle(episodeTitle);
+        try {
+            progressBars.get((progressBars.indexOf(pb))).stepTo(downloaded);
+        } catch (IndexOutOfBoundsException e) {
+            throw new RuntimeException("Ni ma indeksu !");
+        }
+    }
+
+    void closeBar(String episodeTitle) {
+        ProgressBar pb = getProgressBarByEpisodeTitle(episodeTitle);
+        progressBars.get((progressBars.indexOf(pb))).close();
+    }
+
+    void waitForThreadsToRegisterProgressbarBuilders() {
         while (progressBarBuilders.size() < App.threadNumber) {
             try {
-                System.out.println("Waiting for threads to register... " + progressBarBuilders.size() + " -> " + App.threadNumber);
-                Thread.currentThread().sleep(2000);
+                log.info("Waiting for threads to register... " + progressBarBuilders.size() + " -> " + App.threadNumber);
+                Thread.currentThread().sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        System.out.println("All threads registered..." + progressBarBuilders);
+        log.info("All " + App.threadNumber + " threads registered progresbar builders.");
+    }
 
+    void buildProgressbars() {
         try {
             progressBarBuilders.forEach(pbb -> {
                 progressBars.add(pbb.build());
             });
             areProgressBarsBuilded = true;
+            newProgressBarRegistered = false;
             //System.out.print("\033[H\033[2J");
         } catch (RuntimeException e) {
             log.error(e);
         }
+    }
 
-        //System.out.println("Got progress bar for: " + progressBars.get(0).getTaskName() + progressBars.get(0).getMax());
+    @Override
+    public void run() {
 
-        while (!progressBars.isEmpty()) {
+        waitForThreadsToRegisterProgressbarBuilders();
+
+        buildProgressbars();
+
+
+        while (true) { //todo: needs to finish somehow
+
+            if (newProgressBarRegistered) {
+                //System.out.println("New progress");
+                progressBarBuilders.get(progressBarBuilders.size() - 1).build();
+
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                newProgressBarRegistered = false;
+                areProgressBarsBuilded = true;
+
+            }
+            //System.out.println("Got progress bar for: " + progressBars.get(0).getTaskName() + progressBars.get(0).getMax());
+
 
         }
     }

@@ -38,6 +38,9 @@ public final class App {
         threadNumber = numberOfEpisodesLeftToDownload;
         if (numberOfEpisodesLeftToDownload > 10) threadNumber = 10;
 
+        //TODO: To remove - set only for developement
+        threadNumber = 3;
+
         Display display = Display.getInstance();
         display.start();
 
