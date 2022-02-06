@@ -69,6 +69,7 @@ public final class Download extends Thread {
 
         HttpURLConnection http = (HttpURLConnection) downloadUrl.openConnection();
         http.setRequestProperty("referer", "https://vider.info/");
+        http.setRequestProperty("User-Agent", "curl/7.64.1");
         double fileSize = (double) http.getContentLengthLong();
         BufferedInputStream in = new BufferedInputStream(http.getInputStream());
         FileOutputStream fos = new FileOutputStream(mp4File);
