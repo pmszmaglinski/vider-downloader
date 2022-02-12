@@ -31,23 +31,23 @@ public final class App {
                 .getInstance()
                 .initiateDownload();
 
-        //TODO: If zero episodes to download exit - while (episodesToDownload > 0) { ...stuff... }
-        log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " episodes left to download.");
+        if (downloadCoordinator.numberOfEpisodesLeftToDownload > 0) {
+            log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " episodes left to download.");
 
-        Integer numberOfEpisodesLeftToDownload = downloadCoordinator.numberOfEpisodesLeftToDownload;
-        threadNumber = numberOfEpisodesLeftToDownload;
-        if (numberOfEpisodesLeftToDownload > 10) threadNumber = 10;
+            Integer numberOfEpisodesLeftToDownload = downloadCoordinator.numberOfEpisodesLeftToDownload;
+            threadNumber = numberOfEpisodesLeftToDownload;
+            if (numberOfEpisodesLeftToDownload > 10) threadNumber = 10;
 
-        //TODO: To remove - set only for developement
-        threadNumber = 3;
+            ProgressBarBuilderQueue progressBarBuilderQueue = new ProgressBarBuilderQueue(threadNumber);
+            Display display = new Display(progressBarBuilderQueue);
+            display.start();
 
-        ProgressBarBuilderQueue progressBarBuilderQueue = new ProgressBarBuilderQueue(threadNumber);
-        Display display = new Display(progressBarBuilderQueue);
-        display.start();
-
-        for (int i = 1; i <= threadNumber; i++) {
-            Download d = new Download(downloadCoordinator, progressBarBuilderQueue, display);
-            d.start();
+            for (int i = 1; i <= threadNumber; i++) {
+                Download d = new Download(downloadCoordinator, progressBarBuilderQueue, display);
+                d.start();
+            }
+        } else {
+            System.out.println("Your " + ConfigurationManager.configFileName + " says that all downloads are completed.");
         }
     }
 }
