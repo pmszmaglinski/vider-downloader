@@ -1,114 +1,73 @@
 package vider.lan.home;
 
 import me.tongfei.progressbar.ProgressBar;
-import me.tongfei.progressbar.ProgressBarBuilder;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class Display extends Thread {   //TODO: Handle next movie download in same thread
-    //      and finish display when all downloaded
+public class Display extends Thread {
 
-    private static final Logger log = Logger.getLogger(App.class);
+    private static final Logger log = Logger.getLogger(Display.class);
 
-    ArrayList<ProgressBarBuilder> progressBarBuilders = new ArrayList<>();
+    ProgressBarBuilderQueue progressBarBuilderQueue;
     ArrayList<ProgressBar> progressBars = new ArrayList<>();
-    static Boolean areProgressBarsBuilded = false;
-    static Boolean newProgressBarRegistered = false;
 
-    private static Display instance = null;
+    final ReentrantLock lock = new ReentrantLock(true);
+    final Condition progressBarBuilded = lock.newCondition();
+    final Condition addedProgressBarBuilderToQueue = lock.newCondition();
 
-    private Display() {
+    static volatile boolean downloadFinished = false;
+
+    Display(ProgressBarBuilderQueue progressBarBuilderQueue) {
+        this.progressBarBuilderQueue = progressBarBuilderQueue;
     }
 
-    public static Display getInstance() {
-        Display result = instance;
-        if (result == null) {
-            instance = new Display();
+    ProgressBar getProgressBarByEpisodeTitle(String episodeTitle) throws InterruptedException {
+        synchronized (progressBarBuilded) {
+            return progressBars.stream()
+                    .filter(progressBar -> episodeTitle.equals(progressBar.getTaskName()))
+                    .findAny()
+                    .orElse(null);
         }
-        return instance;
     }
 
-    synchronized void registerProgressBarBuilder(ProgressBarBuilder pbb) {
-        progressBarBuilders.add(pbb);
-        //log.info("Registered thread for " + pbb);
-        newProgressBarRegistered = true;
-        areProgressBarsBuilded = false;
-    }
-
-    ProgressBar getProgressBarByEpisodeTitle(String episodeTitle) {
-        return progressBars.stream()
-                .filter(progressBar -> episodeTitle.equals(progressBar.getTaskName()))
-                .findAny()
-                .orElse(null);
-    }
-
-    void updateBar(String episodeTitle, long downloaded) {
+    synchronized void updateBar(String episodeTitle, long downloaded) throws InterruptedException {
         ProgressBar pb = getProgressBarByEpisodeTitle(episodeTitle);
         try {
             progressBars.get((progressBars.indexOf(pb))).stepTo(downloaded);
         } catch (IndexOutOfBoundsException e) {
-            throw new RuntimeException("Ni ma indeksu !");
+            throw new RuntimeException("No episode title in progress bar found !");
         }
     }
 
-    void closeBar(String episodeTitle) {
+    synchronized void closeBar(String episodeTitle) throws InterruptedException {
         ProgressBar pb = getProgressBarByEpisodeTitle(episodeTitle);
         progressBars.get((progressBars.indexOf(pb))).close();
     }
 
-    void waitForThreadsToRegisterProgressbarBuilders() {
-        while (progressBarBuilders.size() < App.threadNumber) {
-            try {
-                log.info("Waiting for threads to register... " + progressBarBuilders.size() + " -> " + App.threadNumber);
-                Thread.currentThread().sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        log.info("All " + App.threadNumber + " threads registered progresbar builders.");
-    }
-
-    void buildProgressbars() {
-        try {
-            progressBarBuilders.forEach(pbb -> {
-                progressBars.add(pbb.build());
-            });
-            areProgressBarsBuilded = true;
-            newProgressBarRegistered = false;
-            //System.out.print("\033[H\033[2J");
-        } catch (RuntimeException e) {
-            log.error(e);
-        }
-    }
-
     @Override
     public void run() {
-
-        waitForThreadsToRegisterProgressbarBuilders();
-
-        buildProgressbars();
-
-
-        while (true) { //todo: needs to finish somehow
-
-            if (newProgressBarRegistered) {
-                //System.out.println("New progress");
-                progressBarBuilders.get(progressBarBuilders.size() - 1).build();
-
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        while (!downloadFinished) {
+            while (progressBarBuilderQueue.progressBarBuilders.size() == 0 && Download.runningThreadsNumber > 0) {
+                synchronized (addedProgressBarBuilderToQueue) {
+                    try {
+                        addedProgressBarBuilderToQueue.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-                newProgressBarRegistered = false;
-                areProgressBarsBuilded = true;
-
             }
-            //System.out.println("Got progress bar for: " + progressBars.get(0).getTaskName() + progressBars.get(0).getMax());
-
-
+            synchronized (progressBarBuilded) {
+                if (progressBarBuilderQueue.progressBarBuilders.size() > 0) {
+                    try {
+                        progressBars.add(progressBarBuilderQueue.progressBarBuilders.remove().build());
+                    } finally {
+                        progressBarBuilded.notifyAll();
+                    }
+                }
+            }
         }
     }
-
 }
