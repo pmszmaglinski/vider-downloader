@@ -12,27 +12,32 @@ public final class App {
 
     public static void main(String[] args) throws TesseractException, IOException, InterruptedException {
         if (args.length == 0 && !ConfigurationManager.checkIfFileExists()) {
-            System.out.println("Provide a series link as an arugment !");
+            System.out.println("Provide a series top link or movie url as an arugment !");
             System.exit(0);
         }
 
         if (!ConfigurationManager
                 .checkIfFileExists()) {
-            log.info("Preparing configuration file...");
+            System.out.println("Preparing configuration file...");
             ConfigurationManager
                     .getInstance()
                     .setUrlPath(args[0])
                     .generate();
         } else {
-            log.info("Found configuration file: " + ConfigurationManager.configFileName);
+            String message = "Found configuration file: " + ConfigurationManager.configFileName;
+            System.out.println(message);
+            log.info(message);
         }
 
         DownloadCoordinator downloadCoordinator = DownloadCoordinator
                 .getInstance()
                 .initiateDownload();
 
+        System.out.print("\033[H\033[2J");
         if (downloadCoordinator.numberOfEpisodesLeftToDownload > 0) {
-            log.info(downloadCoordinator.numberOfEpisodesLeftToDownload + " episodes left to download.");
+            String message = downloadCoordinator.numberOfEpisodesLeftToDownload + " episodes left to download.";
+            System.out.println(message);
+            log.info(message);
 
             Integer numberOfEpisodesLeftToDownload = downloadCoordinator.numberOfEpisodesLeftToDownload;
             threadNumber = numberOfEpisodesLeftToDownload;

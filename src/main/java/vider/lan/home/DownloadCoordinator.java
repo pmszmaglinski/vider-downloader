@@ -121,15 +121,4 @@ public final class DownloadCoordinator {
         log.info("Nothing left to download in " + ConfigurationManager.configFileName);
         //System.exit(0);
     }
-
-
-//    String checkEpisodeDownloadStatus(String seasonNumber, String episodeTitle) {
-//        Map<String, Map<String, String>> seasonMap =
-//                (Map<String, Map<String, String>>) configfileMap
-//                        .get(seasonNumber);
-//
-//        return seasonMap
-//                .get(episodeTitle)
-//                .get("downloaded");
-//    }
 }

@@ -79,7 +79,9 @@ final class ConfigurationManager {
             log.info("Got movie link...");
             Map<String, String> episodeMap = getEpisodeMap(url);
             configfileMap.put(getMovieTitle(doc), episodeMap);
-            log.info("Finished generating config for movie: " + getMovieTitle(doc));
+            String message =  "Finished generating config for movie: " + getMovieTitle(doc);
+            System.out.println(message);
+            log.info(message);
         } else if (url.startsWith("/dir/+d")) {
             doc.select("p.title > a").forEach(x -> {
                 String capturedLink, linkDescription;
@@ -93,7 +95,9 @@ final class ConfigurationManager {
                         log.info("Found movie: " + capturedLink + " -> " + linkDescription);
                         Map<String, String> episodeMap = getEpisodeMap(capturedLink);
                         configfileMap.put(linkDescription, episodeMap);
-                        log.info("Finished generating config for episode: " + linkDescription);
+                        String message = "Finished generating config for episode: " + linkDescription;
+                        System.out.println(message);
+                        log.info(message);
                     } else throw new RuntimeException("Found unknown link: " + capturedLink + linkDescription);
                 } catch (TesseractException | IOException e) {
                     e.printStackTrace();
@@ -191,7 +195,7 @@ final class ConfigurationManager {
         while (response.statusCode() == 404) {
             File captchaFile = getCaptchaFile(doc);
             String captchaCode = getCaptchaCode(captchaFile);
-            log.debug("Trying captcha: " + captchaCode);
+            log.info("Trying captcha: " + captchaCode);
             response = sendCaptcha(url, captchaCode);
         }
 
@@ -205,7 +209,6 @@ final class ConfigurationManager {
                 .create();
         try (FileWriter fw = new FileWriter(configFileName)) {
             gson.toJson(map, fw);
-//            log.info("Generated configuration file: " + configFileName);
         } catch (IOException e) {
             log.error("Faild to create configuration file ! ", e);
         }
@@ -234,19 +237,4 @@ final class ConfigurationManager {
         return Objects.requireNonNull(doc.select("title").first())
                 .text();
     }
-
-//    private void addElementsToMap(Document doc, Map<String, String> map) {
-//        Elements el = doc.select("p.title > a");
-//        el.forEach(element -> map.put(element.html(), element.attr("href")));
-//    }
-//
-//        private String map2Json(Map<String, Object> map) {
-//        Gson gson = new GsonBuilder().setPrettyPrinting().create();
-//        return gson.toJson(map);
-//    }
-
-//        private void getResponseHeaders(HttpResponse response) {
-//        response.headerNames().forEach(header -> System.out.println(header + " -> " + response.header(header)));
-//    }
-
 }

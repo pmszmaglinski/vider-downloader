@@ -100,12 +100,6 @@ public final class Download extends Thread {
             }
         }
 
-//        // Mocking download
-//        for (read = 0; read < fileSize; read++) {
-//            downloaded += read;
-//            display.updateBar(episodeTitle, (long) downloaded / (1048576));
-//        }
-
         while ((read = in.read(buffer, 0, BUFFER_SIZE)) >= 0) {
             bout.write(buffer, 0, read);
             downloaded += read;
