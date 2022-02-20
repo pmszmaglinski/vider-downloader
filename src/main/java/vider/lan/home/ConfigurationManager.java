@@ -79,7 +79,7 @@ final class ConfigurationManager {
             log.info("Got movie link...");
             Map<String, String> episodeMap = getEpisodeMap(url);
             configfileMap.put(getMovieTitle(doc), episodeMap);
-            String message =  "Finished generating config for movie: " + getMovieTitle(doc);
+            String message = "Finished generating config for movie: " + getMovieTitle(doc);
             System.out.println(message);
             log.info(message);
         } else if (url.startsWith("/dir/+d")) {
@@ -184,7 +184,12 @@ final class ConfigurationManager {
     }
 
     private HttpResponse sendCaptcha(String url, String captchaCode) {
-
+        try {
+            log.info("Sleeping a bit...");
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return HttpRequest
                 .post(url)
                 .form("captcha", captchaCode)
